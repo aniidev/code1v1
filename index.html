@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <title>Code1v1</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="/socket.io/socket.io.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
 </head>
 <body>
   <div class="header">
@@ -63,14 +65,30 @@
   </div>
 
   <!-- Game Area -->
-  <div id="game" class="container">
-    <h2 id="questionTitle">Write a function that reverses a string</h2>
-    <textarea id="codeInput" placeholder="Write your code here..."></textarea>
-    <button onclick="submitCode()">Submit Solution</button>
-    <p id="status"></p>
+  <div id="game" class="container" style="display:none; text-align: left; padding: 20px; max-width: 800px; margin: auto;">
+    <div id="timer">0:30</div>
+    <h2 id="questionTitle"></h2>
+    <p id="questionDescription" style="white-space: pre-wrap;"></p>
+    
+    <h3>Examples</h3>
+    <div id="questionExamples"></div>
+    
+    <h3>Test Cases</h3>
+    <div id="questionTestCases"></div>
+  
+    <label for="languageSelect">Choose Language:</label>
+<select id="languageSelect" onchange="setLanguage()">
+  <option value="javascript">JavaScript</option>
+  <option value="python">Python</option>
+  <option value="cpp">C++</option>
+  <option value="java">Java</option>
+</select>
+
+<div id="editor" style="height: 400px; width: 100%; margin-top: 20px;"></div>
+<input type="hidden" id="codeInput" />
+<button onclick="submitCode()">Submit</button>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

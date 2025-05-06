@@ -1,0 +1,286 @@
+[
+    {
+      "id": 1,
+      "title": "Two Sum",
+      "difficulty": "Easy",
+      "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+      "examples": [
+        {
+          "input": "nums = [2,7,11,15], target = 9",
+          "output": "[0,1]"
+        }
+      ],
+      "testCases": [
+        {
+          "input": "[2,7,11,15]\n9",
+          "expectedOutput": "[0,1]"
+        },
+        {
+          "input": "[3,2,4]\n6",
+          "expectedOutput": "[1,2]"
+        }
+      ],
+      "functionSignatures": {
+        "python": "def twoSum(nums, target):",
+        "cpp": "vector<int> twoSum(vector<int>& nums, int target) {",
+        "java": "public int[] twoSum(int[] nums, int target) {",
+        "javascript": "function twoSum(nums, target) {"
+      }
+    },
+    {
+        "id": 2,
+        "title": "Reverse Integer",
+        "difficulty": "Easy",
+        "description": "Given a signed 32-bit integer x, return x with its digits reversed. If reversing x causes the value to go outside the signed 32-bit integer range, return 0.",
+        "examples": [
+          {
+            "input": "x = 123",
+            "output": "321"
+          },
+          {
+            "input": "x = -123",
+            "output": "-321"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "123",
+            "expectedOutput": "321"
+          },
+          {
+            "input": "-120",
+            "expectedOutput": "-21"
+          },
+          {
+            "input": "1534236469",
+            "expectedOutput": "0"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def reverse(x):",
+          "cpp": "int reverse(int x) {",
+          "java": "public int reverse(int x) {",
+          "javascript": "function reverse(x) {"
+        }
+      },
+      {
+        "id": 3,
+        "title": "Valid Parentheses",
+        "difficulty": "Easy",
+        "description": "Given a string s containing just the characters '()[]{}', determine if the input string is valid.",
+        "examples": [
+          {
+            "input": "s = '()'",
+            "output": "true"
+          },
+          {
+            "input": "s = '(]'",
+            "output": "false"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "([])",
+            "expectedOutput": "true"
+          },
+          {
+            "input": "([)]",
+            "expectedOutput": "false"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def isValid(s):",
+          "cpp": "bool isValid(string s) {",
+          "java": "public boolean isValid(String s) {",
+          "javascript": "function isValid(s) {"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Merge Two Sorted Lists",
+        "difficulty": "Easy",
+        "description": "Merge two sorted linked lists and return it as a new sorted list.",
+        "examples": [
+          {
+            "input": "l1 = [1,2,4], l2 = [1,3,4]",
+            "output": "[1,1,2,3,4,4]"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "[1,2,4]\n[1,3,4]",
+            "expectedOutput": "[1,1,2,3,4,4]"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def mergeTwoLists(l1, l2):",
+          "cpp": "ListNode* mergeTwoLists(ListNode* l1, ListNode* l2) {",
+          "java": "public ListNode mergeTwoLists(ListNode l1, ListNode l2) {",
+          "javascript": "function mergeTwoLists(l1, l2) {"
+        }
+      },
+      {
+        "id": 5,
+        "title": "Longest Substring Without Repeating Characters",
+        "difficulty": "Medium",
+        "description": "Given a string s, find the length of the longest substring without repeating characters.",
+        "examples": [
+          {
+            "input": "s = 'abcabcbb'",
+            "output": "3"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "bbbbb",
+            "expectedOutput": "1"
+          },
+          {
+            "input": "pwwkew",
+            "expectedOutput": "3"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def lengthOfLongestSubstring(s):",
+          "cpp": "int lengthOfLongestSubstring(string s) {",
+          "java": "public int lengthOfLongestSubstring(String s) {",
+          "javascript": "function lengthOfLongestSubstring(s) {"
+        }
+      },
+      {
+        "id": 6,
+        "title": "Add Two Numbers",
+        "difficulty": "Medium",
+        "description": "You are given two non-empty linked lists representing two non-negative integers. Add the two numbers and return the sum as a linked list.",
+        "examples": [
+          {
+            "input": "l1 = [2,4,3], l2 = [5,6,4]",
+            "output": "[7,0,8]"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "[2,4,3]\n[5,6,4]",
+            "expectedOutput": "[7,0,8]"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def addTwoNumbers(l1, l2):",
+          "cpp": "ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {",
+          "java": "public ListNode addTwoNumbers(ListNode l1, ListNode l2) {",
+          "javascript": "function addTwoNumbers(l1, l2) {"
+        }
+      },
+      {
+        "id": 7,
+        "title": "Median of Two Sorted Arrays",
+        "difficulty": "Hard",
+        "description": "Given two sorted arrays nums1 and nums2, return the median of the two sorted arrays.",
+        "examples": [
+          {
+            "input": "nums1 = [1,3], nums2 = [2]",
+            "output": "2.0"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "[1,3]\n[2]",
+            "expectedOutput": "2.0"
+          },
+          {
+            "input": "[1,2]\n[3,4]",
+            "expectedOutput": "2.5"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def findMedianSortedArrays(nums1, nums2):",
+          "cpp": "double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {",
+          "java": "public double findMedianSortedArrays(int[] nums1, int[] nums2) {",
+          "javascript": "function findMedianSortedArrays(nums1, nums2) {"
+        }
+      },
+      {
+        "id": 8,
+        "title": "Longest Palindromic Substring",
+        "difficulty": "Medium",
+        "description": "Given a string s, return the longest palindromic substring in s.",
+        "examples": [
+          {
+            "input": "s = 'babad'",
+            "output": "'bab' or 'aba'"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "cbbd",
+            "expectedOutput": "bb"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def longestPalindrome(s):",
+          "cpp": "string longestPalindrome(string s) {",
+          "java": "public String longestPalindrome(String s) {",
+          "javascript": "function longestPalindrome(s) {"
+        }
+      },
+      {
+        "id": 9,
+        "title": "Regular Expression Matching",
+        "difficulty": "Hard",
+        "description": "Given an input string s and a pattern p, implement regular expression matching with support for '.' and '*'.",
+        "examples": [
+          {
+            "input": "s = 'aa', p = 'a'",
+            "output": "false"
+          },
+          {
+            "input": "s = 'aa', p = 'a*'",
+            "output": "true"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "mississippi\nmis*is*p*.",
+            "expectedOutput": "false"
+          },
+          {
+            "input": "ab\n.*",
+            "expectedOutput": "true"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def isMatch(s, p):",
+          "cpp": "bool isMatch(string s, string p) {",
+          "java": "public boolean isMatch(String s, String p) {",
+          "javascript": "function isMatch(s, p) {"
+        }
+      },
+      {
+        "id": 10,
+        "title": "Word Ladder",
+        "difficulty": "Hard",
+        "description": "Given two words (beginWord and endWord), and a dictionary's word list, return the length of the shortest transformation sequence from beginWord to endWord.",
+        "examples": [
+          {
+            "input": "beginWord = 'hit', endWord = 'cog', wordList = ['hot','dot','dog','lot','log','cog']",
+            "output": "5"
+          }
+        ],
+        "testCases": [
+          {
+            "input": "hit\ncog\n['hot','dot','dog','lot','log','cog']",
+            "expectedOutput": "5"
+          },
+          {
+            "input": "hit\ncog\n['hot','dot','dog','lot','log']",
+            "expectedOutput": "0"
+          }
+        ],
+        "functionSignatures": {
+          "python": "def ladderLength(beginWord, endWord, wordList):",
+          "cpp": "int ladderLength(string beginWord, string endWord, vector<string>& wordList) {",
+          "java": "public int ladderLength(String beginWord, String endWord, List<String> wordList) {",
+          "javascript": "function ladderLength(beginWord, endWord, wordList) {"
+        }
+      }
+]

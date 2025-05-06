@@ -16,6 +16,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding-top: 60px;
     }
 
     .container {
@@ -301,3 +302,51 @@
       height: 60px;
       border-width: 4px;
     }
+    #editor {
+      border: 1px solid rgba(22, 246, 107, 0.2);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
+
+    #game {
+  max-width: none;
+  width: 100%;
+  height: 100vh;
+  background-color: #121212;
+  color: #e4e4e4;
+}
+
+#editor {
+  height: 100%;
+  width: 100%;
+}
+
+#questionPanel {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+#questionPanel h3 {
+  margin-top: 1rem;
+  color: #16f66b;
+}
+
+#questionExamples pre,
+#questionTestCases pre {
+  background-color: #262626;
+  padding: 10px;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  font-family: Consolas, monospace;
+}
+
+#timer {
+  font-size: 2em;
+  font-weight: bold;
+  color: #ffa116;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 2;
+}
