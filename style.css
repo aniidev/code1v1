@@ -1,0 +1,303 @@
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    body {
+      background-color: #121212;
+      color: #e4e4e4;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background-color: #151515;
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin: 2rem auto;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(22, 246, 107, 0.1) 0%, rgba(22, 246, 107, 0) 70%);
+      z-index: 0;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background-color: #151515;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #fff;
+    }
+
+    .logo::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      background-color: #16f66b;
+      border-radius: 6px;
+      margin-right: 8px;
+      transform: rotate(45deg);
+    }
+
+    .nav {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .nav a {
+      color: #e4e4e4;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    button, input, textarea {
+      border: none;
+      border-radius: 50px;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 1;
+    }
+    
+    button {
+      background-color: #16f66b;
+      color: #0a0a0a;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(22, 246, 107, 0.3);
+    }
+    
+    button:hover {
+      background-color: #14e061;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(22, 246, 107, 0.4);
+    }
+    
+    input, textarea {
+      background-color: #1e1e1e;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(22, 246, 107, 0.5);
+      box-shadow: 0 0 0 2px rgba(22, 246, 107, 0.2);
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      resize: none;
+      margin-top: 20px;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    #lobby {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    #lobby h2 {  
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    #lobby button {
+      min-width: 120px;
+    }
+
+    #roomInput {
+      width: 100%;
+      max-width: 300px;
+    }
+
+
+    #waitingScreen {
+      text-align: center;
+    }
+
+    #waitingScreen h2 {
+      margin-bottom: 1rem;
+    }
+
+    #waitingScreen p {
+      margin-bottom: 2rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    #waitingRoomCode {
+      font-weight: 600;
+      background-color: rgba(22, 246, 107, 0.1);
+      padding: 8px 16px;
+      border-radius: 8px;
+      letter-spacing: 2px;
+      color: #16f66b;
+    }
+
+
+    #vsScreen {
+      text-align: center;
+    }
+
+    #vsScreen h2 {
+      margin-bottom: 1.5rem;
+      letter-spacing: 3px;
+    }
+
+    .vs-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3rem;
+      margin: 2.5rem 0;
+    }
+
+    .vs-text {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #16f66b;
+      text-shadow: 0 0 15px rgba(22, 246, 107, 0.5);
+    }
+
+    .emoji {
+      font-size: 4rem;
+      margin-bottom: 0.5rem;
+      background: rgba(22, 246, 107, 0.1);
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .countdown {
+      margin-top: 2.5rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    #vsTimer {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+      color: #16f66b;
+    }
+
+
+    #game {
+      text-align: center;
+    }
+
+    #questionTitle {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+      color: #fff;
+    }
+
+    #codeInput {
+      background: #1a1a1a;
+      color: #e4e4e4;
+      border: 1px solid rgba(22, 246, 107, 0.2);
+      border-radius: 8px;
+    }
+
+    #game button {
+      margin-top: 1.5rem;
+    }
+
+    #status {
+      margin-top: 1.5rem;
+      padding: 10px;
+      color: #16f66b;
+      font-weight: 500;
+    }
+
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #16f66b;
+      margin-bottom: 1.5rem;
+    }
+
+    .accent {
+      color: #16f66b;
+    }
+
+
+    #waitingScreen, #vsScreen, #game {
+      display: none;
+    }
+
+
+    .decoration {
+      position: absolute;
+      z-index: 0;
+    }
+
+    .arrow-up {
+      position: absolute;
+      right: 30px;
+      top: 50%;
+      width: 40px;
+      height: 40px;
+      border-right: 3px solid rgba(22, 246, 107, 0.4);
+      border-top: 3px solid rgba(22, 246, 107, 0.4);
+      transform: rotate(45deg);
+    }
+
+    .arrow-up-large {
+      right: 60px;
+      width: 60px;
+      height: 60px;
+      border-width: 4px;
+    }

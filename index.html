@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Code1v1</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="header">
+    <div class="logo">Code1v1</div>
+    <div class="nav">
+      <a href="#">Home</a>
+      <a href="#">Challenges</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="actions">
+      <button style="background-color: transparent; color: #e4e4e4; border: 1px solid rgba(255,255,255,0.1);">Sign Up</button>
+      <button>Login</button>
+    </div>
+  </div>
+  <!-- Turn into seperate files later pls-->
+  <!-- Lobby -->
+  <div id="lobby" class="container">
+    <div class="arrow-up"></div>
+    <div class="arrow-up arrow-up-large"></div>
+    
+    <h2>Welcome to <span class="accent">Code</span>1v1</h2>
+    <p>Go head to head in DSA</p>
+    
+    <button onclick="createRoom()">Create Room</button>
+    <div style="display: flex; gap: 1rem; width: 100%; max-width: 400px; margin-top: 1rem;">
+      <input id="roomInput" placeholder="Room Code" />
+      <button onclick="joinRoom()">Join</button>
+    </div>
+  </div>
+
+  <!-- Waiting Screen -->
+  <div id="waitingScreen" class="container">
+    <h2>Waiting for opponent...</h2>
+    <p>Share your room code with a friend to start the challenge!</p>
+    <div>Room Code: <span id="waitingRoomCode">ABCD1234</span></div>
+  </div>
+
+  <!-- VS Screen -->
+  <div id="vsScreen" class="container">
+    <h2>CODING 1V1</h2>
+    <div class="vs-row">
+      <div>
+        <div class="emoji">😃</div>
+        <div>you</div>
+      </div>
+      <div class="vs-text">VS</div>
+      <div>
+        <div class="emoji">😐</div>
+        <div>opponent</div>
+      </div>
+    </div>
+    <div class="countdown">
+      <div>Challenge starts in:</div>
+      <div id="vsTimer">0:30</div>
+    </div>
+  </div>
+
+  <!-- Game Area -->
+  <div id="game" class="container">
+    <h2 id="questionTitle">Write a function that reverses a string</h2>
+    <textarea id="codeInput" placeholder="Write your code here..."></textarea>
+    <button onclick="submitCode()">Submit Solution</button>
+    <p id="status"></p>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
