@@ -38,7 +38,7 @@ socket.on('startGame', (question) => {
       document.getElementById('vsScreen').style.display = 'none';
       document.getElementById('game').style.display = 'block';
 
-      // Display all question details
+
       document.getElementById('questionTitle').innerText = question.title;
       document.getElementById('questionDescription').innerText = question.description;
 
@@ -58,7 +58,6 @@ socket.on('startGame', (question) => {
 });
 
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
-
 require(['vs/editor/editor.main'], function () {
   editor = monaco.editor.create(document.getElementById('editor'), {
     value: '',
@@ -66,67 +65,188 @@ require(['vs/editor/editor.main'], function () {
     theme: 'vs-dark',
     fontSize: 20,
     automaticLayout: true,
-    minimap: { enabled: false }
+    minimap: { enabled: false },
+    lineNumbersMinChars: 2 
   });
 });
 
 function submitCode() {
-  const code = editor.getValue(); 
+  const code = editor.getValue();
+  
   socket.emit('submitCode', { room, code });
   document.getElementById('status').innerText = 'Submitted...';
 }
+
+
+async function runCode() {
+  const code = editor.getValue();
+  const lang = document.getElementById('languageSelect').value;
+  const userInput = document.getElementById('codeInput')?.value || '';
+  
+  document.getElementById('status').innerText = 'Running...';
+  document.getElementById('output').innerHTML = '<pre class="info">Sending request to Piston API...</pre>';
+  
+  try {
+
+    const pistonURL = "https://emkc.org/api/v2/piston/execute";
+    
+    
+    
+    
+    const languageVersions = {
+      "javascript": "18.15.0",
+      "python": "3.10.0",
+      "java": "15.0.2",
+      "cpp": "10.2.0"
+    };
+    
+
+    const fileExtensions = {
+      "javascript": "js",
+      "python": "py",
+      "java": "java",
+      "cpp": "cpp"
+    };
+    
+    // Request data
+    const requestData = {
+      language: lang,
+      version: languageVersions[lang] || "*", // Use specified version or latest
+      files: [
+        {
+          name: `main.${fileExtensions[lang] || lang}`,
+          content: code
+        }
+      ],
+      stdin: "",
+      args: [],
+      compile_timeout: 10000,
+      run_timeout: 3000
+    };
+    
+    // Log request for debugging
+    console.log("Sending request to Piston API:", requestData);
+    document.getElementById('output').innerHTML += '<pre>Request sent. Waiting for response...</pre>';
+    
+    // Send request to Piston API
+    const response = await fetch(pistonURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+
+    // Format and display the result
+    let statusMessage = "";
+    let outputHTML = "";
+    
+    // Display the raw response for debugging
+    outputHTML += `<pre style="color: blue; font-size: 12px;">API Response: ${JSON.stringify(result, null, 2)}</pre>`;
+    
+    if (result.compile && result.compile.stderr) {
+      statusMessage = "Compilation Error";
+      outputHTML += `<pre style="color: red">${result.compile.stderr}</pre>`;
+    } 
+    
+    if (result.run) {
+      if (result.run.stderr && result.run.stderr.trim() !== "") {
+        statusMessage = "Runtime Error";
+        outputHTML += `<pre style="color: red">${result.run.stderr}</pre>`;
+      }
+      
+      if (result.run.stdout && result.run.stdout.trim() !== "") {
+        statusMessage = "Success!";
+        outputHTML += `<pre style="color: green">${result.run.stdout}</pre>`;
+      } else {
+        if (!statusMessage) statusMessage = "No Output";
+        outputHTML += `<pre>(No standard output)</pre>`;
+      }
+    } else {
+      if (!statusMessage) statusMessage = "Execution Complete";
+      outputHTML += `<pre>No run results returned from API.</pre>`;
+    }
+    
+    document.getElementById('status').innerText = statusMessage;
+    document.getElementById('output').innerHTML = outputHTML;
+    
+  } catch (error) {
+    document.getElementById('status').innerText = `Error: ${error.message}`;
+    console.error('Error executing code:', error);
+  }
+}
+
 socket.on('result', (msg) => {
   document.getElementById('status').innerText = msg;
 });
+
 socket.on('connect_error', (err) => {
-    console.error('Connection error:', err.message);
-  });
+  console.error('Connection error:', err.message);
+});
 
-  socket.on('invalidRoom', (msg) => {
-    alert(msg);
-    document.getElementById('lobby').style.display = 'block';
-    document.getElementById('game').style.display = 'none';
-  });
-  
-  function setLanguage() {
-    if (!currentQuestion || !editor) return;
-  
-    const lang = document.getElementById('languageSelect').value;
-  
-    const monacoLangMap = {
-      'javascript': 'javascript',
-      'python': 'python',
-      'cpp': 'cpp',
-      'java': 'java'
-    };
-  
-    const monacoLang = monacoLangMap[lang] || 'javascript';
-  
-    let rawSignature = currentQuestion.functionSignatures[lang] || '';
-    let fullTemplate = '';
-  
-    switch (lang) {
-      case 'python':
-        fullTemplate = `${rawSignature}\n    # solution here`;
-        break;
-      case 'javascript':
-        fullTemplate = `${rawSignature}\n  // solution here\n}`;
-        break;
-      case 'java':
-        fullTemplate = `${rawSignature}\n    // solution here\n}`;
-        break;
-      case 'cpp':
-        fullTemplate = `${rawSignature}\n    // solution here\n}`;
-        break;
-      default:
-        fullTemplate = `${rawSignature}\n  // solution here`;
-    }
-  
+socket.on('invalidRoom', (msg) => {
+  alert(msg);
+  document.getElementById('lobby').style.display = 'block';
+  document.getElementById('game').style.display = 'none';
+});
 
-    monaco.editor.setModelLanguage(editor.getModel(), monacoLang);
-    editor.setValue(fullTemplate);
+function setLanguage() {
+  if (!currentQuestion || !editor) return;
+
+  const lang = document.getElementById('languageSelect').value;
+
+  const monacoLangMap = {
+    'javascript': 'javascript',
+    'python': 'python',
+    'cpp': 'cpp',
+    'java': 'java'
+  };
+
+  // Check if the language is valid; if not, default to 'javascript'
+  const monacoLang = monacoLangMap[lang] || 'javascript';
+
+  // Use optional chaining and provide defaults if keys are missing
+  const rawSignature = currentQuestion.functionSignatures?.[lang] || '';
+  const funcName = currentQuestion.functionName || 'functionName';
+  const inputs = currentQuestion.inputs?.[lang] || {};
+  const returnType = currentQuestion.output || '';
+
+  // Example to check if we have the expected input for the language
+  console.log('Function Name:', funcName);
+  console.log('Inputs:', inputs);
+  console.log('Return Type:', returnType);
+
+  let fullTemplate = '';
+
+  // Generate a function template for the selected language
+  switch (lang) {
+    case 'python':
+      fullTemplate = `${rawSignature}\n    # solution here\n    pass`;
+      break;
+    case 'javascript':
+      fullTemplate = `${rawSignature}\n  // solution here\n}`;
+      break;
+    case 'java':
+      fullTemplate = `${rawSignature}\n    // solution here\n}`;
+      break;
+    case 'cpp':
+      fullTemplate = `${rawSignature}\n    // solution here\n}`;
+      break;
+    default:
+      fullTemplate = `// Missing signature`;
   }
-  
+
+  // Set the language in Monaco Editor and insert the function template
+  monaco.editor.setModelLanguage(editor.getModel(), monacoLang);
+  editor.setValue(fullTemplate);
+}
   let gameTimerInterval = null;
 
 function startGameTimer() {
