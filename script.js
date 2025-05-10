@@ -4,7 +4,7 @@ let vsInterval = null;
 let editor = null;
 let currentQuestion = null;
 let gameTimerInterval = null;
-
+let won = false;
 function createRoom() {
   room = Math.random().toString(36).substring(2, 5).toUpperCase();
   socket.emit('joinRoom', room);
@@ -51,7 +51,6 @@ socket.on('startGame', (question) => {
       const testCasesHTML = question.testCases.map(
         tc => `<pre><strong>Input:</strong> ${tc.input}\n<strong>Expected Output:</strong> ${tc.expectedOutput}</pre>`
       ).join('');
-      document.getElementById('questionTestCases').innerHTML = testCasesHTML;
       startGameTimer();
     }
   }, 1000);
@@ -74,7 +73,7 @@ require(['vs/editor/editor.main'], function () {
 function submitCode() {
   const code = editor.getValue();
   
-  socket.emit('submitCode', { room, code });
+  socket.emit('submitCode', { room, code, won});
   document.getElementById('status').innerText = 'Submitted...';
 }
 
@@ -367,6 +366,9 @@ async function runCode() {
       outputHTML += `<pre>${line}</pre>`;
       if (line.includes('PASS')) passCount++;
     });
+
+    if(passCount === testCases.length) won = true;
+    else won = false;
 
     statusSummary = `Passed ${passCount} out of ${testCases.length} test cases.`;
 

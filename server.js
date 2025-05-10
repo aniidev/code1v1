@@ -39,10 +39,22 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('submitCode', ({ room, code }) => {
-    const win = Math.random() > 0.5 ? 'Player 1' : 'Player 2';
-    io.to(room).emit('result', `${win} wins!`);
-  });
+  socket.on('submitCode', ({ room, code, won }) => {
+  const playerIndex = rooms[room].indexOf(socket.id);
+  const isPlayer1 = playerIndex === 0;
+  
+  if (won) {
+    socket.emit('result', 'You won!');
+    
+    const otherPlayerIndex = isPlayer1 ? 1 : 0;
+    if (rooms[room][otherPlayerIndex]) {
+      io.to(rooms[room][otherPlayerIndex]).emit('result', 'Opponent AC - You lose');
+    }
+  } else {
+
+    socket.emit('result', 'Wrong Answer');
+  }
+});
 });
 
 server.listen(3000, () => {
