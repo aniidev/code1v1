@@ -72,7 +72,7 @@ require(['vs/editor/editor.main'], function () {
 
 function submitCode() {
   const code = editor.getValue();
-  
+  runCode();
   socket.emit('submitCode', { room, code, won});
   document.getElementById('status').innerText = 'Submitted...';
 }
@@ -92,7 +92,15 @@ socket.on('invalidRoom', (msg) => {
   document.getElementById('game').style.display = 'none';
 });
 
+function findPublicMatch() {
+  socket.emit('publicMatch');
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('waitingScreen').style.display = 'block';
+}
 
+socket.on('waitingForOpponent', () => {
+  document.getElementById('waitingScreen').innerText = 'Finding an opponent...';
+});
 
 function startGameTimer() {
   let totalSeconds = 15 * 60; // 15 minutes in seconds
