@@ -1,3 +1,4 @@
+
 const socket = io();
 let room = '';
 let vsInterval = null;
@@ -145,158 +146,147 @@ function normalizeOutput(output, expectedType) {
   return out.replace(/^['"]|['"]$/g, '');
 }
 
+// Generate argument list for function call in each language
+function formatArg(val, type, lang) {
+  if (Array.isArray(val) || /\[\]|\bList\b|\bvector\b/.test(type)) {
+    if (lang === 'python' || lang === 'javascript') {
+      return `[${val.map(v => typeof v === 'string' ? `"${v}"` : v).join(', ')}]`;
+    }
+    if (lang === 'java') {
+      return `Arrays.asList(${val.map(v => `"${v}"`).join(', ')})`;
+    }
+    if (lang === 'cpp') {
+      return `{${val.map(v => `"${v}"`).join(', ')}}`;
+    }
+  }
+  if (typeof val === 'string') return `"${val.replace(/"/g, '\\"')}"`;
+  if (typeof val === 'boolean') return lang === 'python' ? (val ? 'True' : 'False') : (val ? 'true' : 'false');
+  return val;
+}
+
+function parseInputValue(value, type) {
+  try {
+    // For arrays/lists
+    if (type && (type.includes('List') || type.includes('[]') || type.includes('vector'))) {
+      // Accept both JSON and Python/JavaScript-like arrays
+      if (value.startsWith('[') && value.endsWith(']')) {
+        return JSON.parse(value.replace(/'/g, '"'));
+      }
+      // Fallback: comma-separated
+      return value.split(',').map(v => v.trim().replace(/^['"]|['"]$/g, ''));
+    }
+    // For booleans
+    if (type && (type === 'bool' || type === 'boolean')) {
+      if (typeof value === 'boolean') return value;
+      return value.trim().toLowerCase() === 'true';
+    }
+    // For numbers
+    if (type && (type === 'int' || type === 'number')) {
+      return Number(value);
+    }
+    // For strings
+    return value.replace(/^['"]|['"]$/g, '');
+  } catch {
+    return value;
+  }
+}
+
+
 function generateTestHarness(lang, funcName, testCases, inputTypes, returnType) {
-  // Helper to format arguments for code
-  function formatArg(val, type) {
-    if (Array.isArray(val) || /\[\]|\bList\b|\bvector\b/.test(type)) {
-      if (lang === 'python' || lang === 'javascript') {
-        return `[${val.map(v => typeof v === 'string' ? `"${v}"` : v).join(', ')}]`;
-      }
-      if (lang === 'java') {
-        return `Arrays.asList(${val.map(v => `"${v}"`).join(', ')})`;
-      }
-      if (lang === 'cpp') {
-        return `{${val.map(v => `"${v}"`).join(', ')}}`;
-      }
-    }
-    if (/str|String|string/.test(type)) {
-      return `"${val}"`;
-    }
-    if (/bool|boolean/.test(type)) {
-      return val ? (lang === 'python' ? 'True' : 'true') : (lang === 'python' ? 'False' : 'false');
-    }
-    return val;
+  const argNames = Object.keys(inputTypes);
+
+  function parseInputs(tcInput) {
+    const lines = tcInput.split('\n').map(l => l.trim()).filter(Boolean);
+    // If only one argument, treat the whole input as one value
+    if (argNames.length === 1) return [lines.join('\n')];
+    // If multiple, treat each line as a separate argument
+    return lines;
   }
 
-  // Build test cases as code
-  let harness = '';
-
+  // --- PYTHON ---
   if (lang === 'python') {
-    harness += '\n# --- Test harness ---\n';
+    let harness = '\n# === Test Harness ===\n';
     harness += 'test_cases = [\n';
-    for (const tc of testCases) {
-      const argNames = Object.keys(inputTypes);
-      const inputVals = tc.input.trim().split('\n').map((v, i) => {
-        const type = inputTypes[argNames[i]];
-        // Parse arrays/lists
-        if (type && (type.includes('List') || type.includes('[]'))) {
-          try {
-            return JSON.parse(v.replace(/'/g, '"'));
-          } catch {
-            return v;
-          }
-        }
-        if (type && (type === 'int' || type === 'number')) return Number(v);
-        if (type && (type === 'bool' || type === 'boolean')) return v.trim().toLowerCase() === 'true';
-        return v.replace(/^['"]|['"]$/g, "");
-      });
-      harness += `    ((${inputVals.map((v, i) => formatArg(v, inputTypes[argNames[i]])).join(', ')}), ${formatArg(tc.expectedOutput, returnType)}),\n`;
-    }
+    testCases.forEach(tc => {
+      const inputs = parseInputs(tc.input);
+      const formattedInputs = inputs.map((v, i) => formatArg(parseInputValue(v, inputTypes[argNames[i]]), inputTypes[argNames[i]], lang));
+      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
+      // Always wrap inputs as tuple for unpacking
+      harness += `    ((${formattedInputs.join(', ')}), ${expected}),\n`;
+    });
     harness += ']\n';
-    harness += 'for i, (inputs, expected) in enumerate(test_cases, 1):\n';
-    harness += '    try:\n';
-    harness += `        result = ${funcName}(*inputs)\n`;
-    harness += '        print(f"Case {i}: {"PASS" if result == expected else "FAIL"} | Expected: {expected} | Output: {result}")\n';
-    harness += '    except Exception as e:\n';
-    harness += '        print(f"Case {i}: EXCEPTION | {e}")\n';
+    harness += `for idx, (inputs, expected) in enumerate(test_cases, 1):\n`;
+    harness += `    try:\n`;
+    harness += `        result = ${funcName}(*inputs) if isinstance(inputs, tuple) else ${funcName}(inputs)\n`;
+    harness += `        print(f"Case {idx}: {'PASS' if result == expected else 'FAIL'} | Expected: {expected} | Output: {result}")\n`;
+    harness += `    except Exception as e:\n`;
+    harness += `        print(f"Case {idx}: ERROR | {str(e)}")\n`;
     return harness;
   }
-
   if (lang === 'javascript') {
-    harness += '\n// --- Test harness ---\n';
+    let harness = '\n// === Test Harness ===\n';
     harness += 'const testCases = [\n';
-    for (const tc of testCases) {
-      const argNames = Object.keys(inputTypes);
-      const inputVals = tc.input.trim().split('\n').map((v, i) => {
-        const type = inputTypes[argNames[i]];
-        if (type && (type.includes('[]'))) {
-          try {
-            return JSON.parse(v.replace(/'/g, '"'));
-          } catch {
-            return v;
-          }
-        }
-        if (type && (type === 'int' || type === 'number')) return Number(v);
-        if (type && (type === 'bool' || type === 'boolean')) return v.trim().toLowerCase() === 'true';
-        return v.replace(/^['"]|['"]$/g, "");
-      });
-      harness += `  [[${inputVals.map((v, i) => formatArg(v, inputTypes[argNames[i]])).join(', ')}], ${formatArg(tc.expectedOutput, returnType)}],\n`;
-    }
+    testCases.forEach(tc => {
+      const inputs = parseInputs(tc.input);
+      const formattedInputs = inputs.map((v, i) => formatArg(parseInputValue(v, inputTypes[argNames[i]]), inputTypes[argNames[i]], lang));
+      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
+      // Always wrap inputs as array
+      harness += `  { inputs: [${formattedInputs.join(', ')}], expected: ${expected} },\n`;
+    });
     harness += '];\n';
-    harness += 'testCases.forEach(([inputs, expected], i) => {\n';
-    harness += `  try {\n    const result = ${funcName}(...inputs);\n`;
-    harness += `    console.log(\`Case \${i+1}: \${result === expected ? 'PASS' : 'FAIL'} | Expected: \${expected} | Output: \${result}\`);\n`;
-    harness += '  } catch (e) {\n    console.log(`Case ${i+1}: EXCEPTION | ${e}`);\n  }\n});\n';
+    harness += `
+testCases.forEach(({ inputs, expected }, idx) => {
+  try {
+    const result = ${funcName}(...inputs);
+    console.log(\`Case \${idx + 1}: \${result === expected ? 'PASS' : 'FAIL'} | Expected: \${expected} | Output: \${result}\`);
+  } catch (e) {
+    console.log(\`Case \${idx + 1}: ERROR | \${e}\`);
+  }
+});
+`;
     return harness;
   }
-
+  // --- JAVA ---
   if (lang === 'java') {
     let importLine = '';
     if (Object.values(inputTypes).some(type => /\bList\b/.test(type))) {
       importLine = 'import java.util.*;';
     }
-    harness += `\n${importLine}\npublic class Solution {\n`;
-    harness += '    // user code above\n';
-    harness += '    public static void main(String[] args) {\n';
-    for (let i = 0; i < testCases.length; i++) {
-      const tc = testCases[i];
-      const argNames = Object.keys(inputTypes);
-      const inputVals = tc.input.trim().split('\n').map((v, j) => {
-        const type = inputTypes[argNames[j]];
-        if (type && (type.includes('List'))) {
-          try {
-            return `Arrays.asList(${JSON.parse(v.replace(/'/g, '"')).map(x => `"${x}"`).join(', ')})`;
-          } catch {
-            return v;
-          }
-        }
-        if (type && (type === 'int' || type === 'number')) return Number(v);
-        if (type && (type === 'bool' || type === 'boolean')) return v.trim().toLowerCase() === 'true';
-        return `"${v.replace(/^['"]|['"]$/g, "")}"`;
-      });
+    let harness = `\n${importLine}\npublic class Solution {\n    // user code above\n    public static void main(String[] args) {\n`;
+    testCases.forEach((tc, idx) => {
+      const inputs = parseInputs(tc.input);
+      const formattedInputs = inputs.map((v, i) => formatArg(parseInputValue(v, inputTypes[argNames[i]]), inputTypes[argNames[i]], lang));
+      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
       harness += `        try {\n`;
-      harness += `            Object result = new Solution().${funcName}(${inputVals.join(', ')});\n`;
-      harness += `            System.out.println("Case ${i+1}: " + (result.equals(${formatArg(tc.expectedOutput, returnType)}) ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + result);\n`;
+      harness += `            Object result = new Solution().${funcName}(${formattedInputs.join(', ')});\n`;
+      harness += `            System.out.println("Case ${idx + 1}: " + (result.equals(${expected}) ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + result);\n`;
       harness += `        } catch (Exception e) {\n`;
-      harness += `            System.out.println("Case ${i+1}: EXCEPTION | " + e);\n`;
+      harness += `            System.out.println("Case ${idx + 1}: ERROR | " + e);\n`;
       harness += `        }\n`;
-    }
+    });
     harness += '    }\n}\n';
     return harness;
   }
 
+  // --- C++ ---
   if (lang === 'cpp') {
-    harness += `\n#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n`;
-    harness += `// user code above\n`;
-    harness += `int main() {\n`;
-    for (let i = 0; i < testCases.length; i++) {
-      const tc = testCases[i];
-      const argNames = Object.keys(inputTypes);
-      const inputVals = tc.input.trim().split('\n').map((v, j) => {
-        const type = inputTypes[argNames[j]];
-        if (type && (type.includes('vector'))) {
-          try {
-            return `{${JSON.parse(v.replace(/'/g, '"')).map(x => `"${x}"`).join(', ')}}`;
-          } catch {
-            return v;
-          }
-        }
-        if (type && (type === 'int' || type === 'number')) return Number(v);
-        if (type && (type === 'bool' || type === 'boolean')) return v.trim().toLowerCase() === 'true';
-        return `"${v.replace(/^['"]|['"]$/g, "")}"`;
-      });
-      let expected = tc.expectedOutput;
+    let harness = `\n#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n// user code above\nint main() {\n`;
+    testCases.forEach((tc, idx) => {
+      const inputs = parseInputs(tc.input);
+      const formattedInputs = inputs.map((v, i) => formatArg(parseInputValue(v, inputTypes[argNames[i]]), inputTypes[argNames[i]], lang));
+      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
       harness += `    try {\n`;
-      harness += `        auto result = ${funcName}(${inputVals.join(', ')});\n`;
-      harness += `        cout << "Case ${i+1}: " << (result == ${expected} ? "PASS" : "FAIL") << " | Expected: ${expected} | Output: " << result << endl;\n`;
-      harness += `    } catch (exception& e) {\n`;
-      harness += `        cout << "Case ${i+1}: EXCEPTION | " << e.what() << endl;\n`;
+      harness += `        auto result = ${funcName}(${formattedInputs.join(', ')});\n`;
+      harness += `        cout << "Case ${idx + 1}: " << (result == ${expected} ? "PASS" : "FAIL") << " | Expected: ${tc.expectedOutput} | Output: " << result << endl;\n`;
+      harness += `    } catch (const exception& e) {\n`;
+      harness += `        cout << "Case ${idx + 1}: ERROR | " << e.what() << endl;\n`;
       harness += `    }\n`;
-    }
+    });
     harness += `    return 0;\n}\n`;
     return harness;
   }
 
+  // --- JavaScript already works, so just return empty string ---
   return '';
 }
 
@@ -305,7 +295,7 @@ async function runCode() {
   const code = editor.getValue();
   const lang = document.getElementById('languageSelect').value;
 
-  document.getElementById('status').innerText = 'Running...';
+  document.getElementById('status').innerText = 'Running all test cases...';
   document.getElementById('output').innerHTML = '<pre class="info">Sending request to Piston API...</pre>';
 
   try {
@@ -316,18 +306,10 @@ async function runCode() {
     const funcName = currentQuestion.functionName;
     const returnType = currentQuestion.output || '';
 
-    let fullCode = code;
-
-    // Append the harness for all test cases
-    fullCode += generateTestHarness(lang, funcName, testCases, inputTypes, returnType);
+    // Generate code with test harness
+    let fullCode = code + generateTestHarness(lang, funcName, testCases, inputTypes, returnType);
 
     const pistonURL = "https://emkc.org/api/v2/piston/execute";
-    const languageVersions = {
-      "javascript": "18.15.0",
-      "python": "3.10.0",
-      "java": "15.0.2",
-      "cpp": "10.2.0"
-    };
     const fileExtensions = {
       "javascript": "js",
       "python": "py",
@@ -337,13 +319,16 @@ async function runCode() {
 
     const requestData = {
       language: lang,
-      version: languageVersions[lang] || "*",
-      files: [
-        {
-          name: `main.${fileExtensions[lang] || lang}`,
-          content: fullCode
-        }
-      ],
+      version: {
+        "javascript": "18.15.0",
+        "python": "3.10.0",
+        "java": "15.0.2",
+        "cpp": "10.2.0"
+      }[lang] || "*",
+      files: [{
+        name: `main.${fileExtensions[lang] || lang}`,
+        content: fullCode
+      }],
       stdin: "",
       args: [],
       compile_timeout: 10000,
@@ -352,42 +337,52 @@ async function runCode() {
 
     const response = await fetch(pistonURL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify(requestData)
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     const result = await response.json();
 
-    // Parse and display results
-    let statusSummary = '';
+    // Process results
+    let statusHTML = '';
     let outputHTML = '';
-    let outputLines = (result.run && result.run.stdout ? result.run.stdout.trim().split('\n') : []);
-    let passCount = 0;
-
+    let passed = 0;
+    const outputLines = result.run?.stdout?.split('\n').filter(l => l) || [];
+    
     outputLines.forEach(line => {
-      outputHTML += `<pre>${line}</pre>`;
-      if (line.includes('PASS')) passCount++;
+      const match = line.match(/Case (\d+): (PASS|FAIL|ERROR) \| (.*)/);
+      if (match) {
+        const [_, caseNum, result, details] = match;
+        outputHTML += `<div class="${result.toLowerCase()}">`;
+        outputHTML += `🔄 <strong>Test Case ${caseNum}:</strong> `;
+        outputHTML += `${result === 'PASS' ? '✅' : result === 'FAIL' ? '❌' : '⚠️'} `;
+        outputHTML += `${details}</div>`;
+        if (result === 'PASS') passed++;
+      }
+      
     });
 
-    if(passCount === testCases.length) won = true;
-    else won = false;
+    // Final status summary
+    const allPassed = passed === testCases.length;
+    statusHTML = `<div class="summary ${allPassed ? 'passed' : 'failed'}">` +
+                 `Passed ${passed}/${testCases.length} test cases` +
+                 `${allPassed ? ' 🎉' : ''}</div>` + statusHTML;
 
-    statusSummary = `Passed ${passCount} out of ${testCases.length} test cases.`;
+    document.getElementById('status').innerHTML = statusHTML;
+    document.getElementById('output').innerHTML = outputHTML || "<pre>No output</pre>";
 
-    document.getElementById('status').innerText = statusSummary;
-    document.getElementById('output').innerHTML = outputHTML || "<pre>(No standard output)</pre>";
+    won = allPassed;
 
   } catch (error) {
-    document.getElementById('status').innerText = `Error: ${error.message}`;
-    console.error('Error executing code:', error);
+    document.getElementById('status').innerHTML = 
+      `<div class="error">❌ Error: ${error.message}</div>`;
+    document.getElementById('output').innerHTML = 
+      `<pre class="error">${error.stack || error}</pre>`;
+    console.error('Execution error:', error);
   }
 }
+
 
 
 
@@ -590,31 +585,8 @@ function parseInputs(inputString, inputTypes, lang) {
   return args;
 }
 
-// Generate argument list for function call in each language
-function formatArg(val, type, lang) {
-  // Handle arrays/lists
-  if (Array.isArray(val) || /\[\]|\bList\b|\bvector\b/.test(type)) {
-    if (lang === 'python' || lang === 'javascript') {
-      return `[${val.map(v => `"${v}"`).join(', ')}]`;
-    }
-    if (lang === 'java') {
-      return `Arrays.asList(${val.map(v => `"${v}"`).join(', ')})`;
-    }
-    if (lang === 'cpp') {
-      return `{${val.map(v => `"${v}"`).join(', ')}}`;
-    }
-  }
-  // Handle strings
-  if (/str|String|string/.test(type)) {
-    return `"${val}"`;
-  }
-  // Handle booleans
-  if (/bool|boolean/.test(type)) {
-    return val ? (lang === 'python' ? 'True' : 'true') : (lang === 'python' ? 'False' : 'false');
-  }
-  // Numbers
-  return val;
-}
+
+
 
 // Wrap C++ code with main for invocation
 function wrapCppMethod(methodCode, funcName, args, inputTypes, returnType) {

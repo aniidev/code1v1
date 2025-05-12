@@ -17,9 +17,12 @@ function getRandomQuestion() {
 }
 
 io.on('connection', socket => {
+  console.log(`Client connected: ${socket.id}`);
+
   // PRIVATE ROOM LOGIC
   socket.on('joinRoom', incomingRoom => {
     const room = incomingRoom.toUpperCase();
+    socket.room = room; // ✅ store room on socket
 
     if (rooms[room] && rooms[room].length >= 2) {
       socket.emit('invalidRoom', 'Room is full or unavailable.');
@@ -54,6 +57,9 @@ io.on('connection', socket => {
       player1.join(roomCode);
       player2.join(roomCode);
 
+      player1.room = roomCode; // ✅ store room on each socket
+      player2.room = roomCode;
+
       const question = getRandomQuestion();
       io.to(roomCode).emit('startGame', question);
     } else {
@@ -62,7 +68,13 @@ io.on('connection', socket => {
   });
 
   // CODE SUBMISSION
-  socket.on('submitCode', ({ room, code, won }) => {
+  socket.on('submitCode', ({ code, won }) => {
+    const room = socket.room;
+    if (!room || !rooms[room]) {
+      console.error('Invalid room state for room:', room);
+      return;
+    }
+
     const playerIndex = rooms[room]?.indexOf(socket.id);
     const isPlayer1 = playerIndex === 0;
 
@@ -73,6 +85,25 @@ io.on('connection', socket => {
     } else {
       socket.emit('result', 'Wrong Answer');
     }
+  });
+
+  // DISCONNECT CLEANUP
+  socket.on('disconnect', () => {
+    const room = socket.room;
+    console.log(`Client disconnected: ${socket.id}`);
+
+    if (room && rooms[room]) {
+      rooms[room] = rooms[room].filter(id => id !== socket.id);
+      if (rooms[room].length === 0) {
+        delete rooms[room];
+      } else {
+        const opponentId = rooms[room][0];
+        io.to(opponentId).emit('opponentLeft');
+      }
+    }
+
+    // Also remove from queue if they disconnect during publicMatch
+    queue = queue.filter(s => s.id !== socket.id);
   });
 });
 
