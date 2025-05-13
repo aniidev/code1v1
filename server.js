@@ -22,7 +22,7 @@ io.on('connection', socket => {
   // PRIVATE ROOM LOGIC
   socket.on('joinRoom', incomingRoom => {
     const room = incomingRoom.toUpperCase();
-    socket.room = room; // ✅ store room on socket
+    socket.room = room; 
 
     if (rooms[room] && rooms[room].length >= 2) {
       socket.emit('invalidRoom', 'Room is full or unavailable.');

@@ -6,6 +6,7 @@ let editor = null;
 let currentQuestion = null;
 let gameTimerInterval = null;
 let won = false;
+
 function createRoom() {
   room = Math.random().toString(36).substring(2, 5).toUpperCase();
   socket.emit('joinRoom', room);
@@ -80,7 +81,21 @@ function submitCode() {
 
 
 socket.on('result', (msg) => {
-  document.getElementById('status').innerText = msg;
+   document.getElementById('game').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'block';
+  document.getElementById('end-status').innerText = msg;
+  if(won)
+    {
+      document.getElementById('score').innerHTML = 820; //make elo system later
+      document.getElementById('elo-change').style.color = 'green';
+      document.getElementById('elo-change').innerHTML = 20;
+    } 
+    else
+    {
+       document.getElementById('score').innerHTML = 780; //make elo system later
+       document.getElementById('elo-change').style.color = 'red';
+      document.getElementById('elo-change').innerHTML = -20;
+    }
 });
 
 socket.on('connect_error', (err) => {
@@ -103,6 +118,11 @@ socket.on('waitingForOpponent', () => {
   document.getElementById('waitingScreen').innerText = 'Finding an opponent...';
 });
 
+function returnLobby()
+{
+    document.getElementById('lobby').style.display = 'block';
+    document.getElementById('endScreen').style.display = 'none';
+}
 function startGameTimer() {
   let totalSeconds = 15 * 60; // 15 minutes in seconds
   const timerElem = document.getElementById('timer');
@@ -382,9 +402,6 @@ async function runCode() {
     console.error('Execution error:', error);
   }
 }
-
-
-
 
 function setLanguage() {
   if (!currentQuestion || !editor) return;
