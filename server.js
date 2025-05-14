@@ -9,6 +9,8 @@ const rooms = {};
 const questions = require('./questions.json');
 let queue = [];
 
+
+
 app.use(express.static(__dirname));
 
 function getRandomQuestion() {
@@ -110,3 +112,4 @@ io.on('connection', socket => {
 server.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
 });
+

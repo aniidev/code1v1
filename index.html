@@ -11,6 +11,7 @@
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
 />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script> 
+
 </head> 
 <body>   
   <div class="header">     
@@ -21,13 +22,14 @@
       <a href="leaderboard.html">Leaderboard</a>     
     </div>     
     <div class="actions">       
-      <button style="background-color: transparent; color: #e4e4e4; border: 1px solid rgba(255,255,255,0.1);">Sign Up</button>       
-      <button>Login</button>     
+      <button onclick="location.href='signup.html'" style="background-color: transparent; color: #e4e4e4; border: 1px solid rgba(255,255,255,0.1);">Sign Up</button>       
+      <button onclick="location.href='login.html'">Login</button>     
     </div>   
   </div>      
   
   <!-- Lobby -->   
-  <div id="lobby" class="container">     
+  <div id="lobby" class="container"> 
+    <h1 id="welcomeText"></h1>    
     <div class="arrow-up"></div>     
     <div class="arrow-up arrow-up-large"></div>          
     <h2>Welcome to <span class="accent">Code</span>1v1</h2>     
@@ -113,6 +115,6 @@
     </div>
     <button onclick="returnLobby()" class="button">Back to Lobby</button>
   </div>    
-  <script src="script.js"></script> 
+    <script src="script.js"></script>
 </body> 
 </html>

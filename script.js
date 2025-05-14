@@ -1,4 +1,3 @@
-
 const socket = io();
 let room = '';
 let vsInterval = null;
@@ -6,6 +5,12 @@ let editor = null;
 let currentQuestion = null;
 let gameTimerInterval = null;
 let won = false;
+const userData = JSON.parse(localStorage.getItem("userData"));
+
+if (userData) {
+  document.getElementById("welcomeText").textContent =
+    `Welcome, ${userData.username}! ELO: ${userData.elo}`;
+}
 
 function createRoom() {
   room = Math.random().toString(36).substring(2, 5).toUpperCase();
@@ -467,45 +472,6 @@ function setLanguage() {
   editor.setValue(fullTemplate);
 }
 
-
-// Parses a single input string (from test case) into an array of arguments, based on the expected input types
-function parseInputs(inputString, inputTypes, lang) {
-  const lines = inputString.trim().split('\n');
-  const argNames = Object.keys(inputTypes);
-  let args = [];
-
-  for (let i = 0; i < argNames.length; i++) {
-    let value = lines[i];
-    let type = inputTypes[argNames[i]];
-
-    // Handle arrays/lists for different languages
-    if (type.includes('List') || type.includes('[]') || type.includes('vector')) {
-      // Remove brackets and split by comma
-      value = value.replace(/[\[\]]/g, '').split(',').map(v => {
-        // For string arrays, remove quotes
-        if (type.includes('str') || type.includes('String')) {
-          return v.replace(/['"]/g, '').trim();
-        }
-        return v.trim();
-      });
-      // For Java/C++/JS, keep as array; for Python pass as list
-      if (lang === 'python') {
-        value = JSON.stringify(value);
-      } else if (lang === 'java' || lang === 'cpp' || lang === 'javascript') {
-        value = JSON.stringify(value);
-      }
-    } else if (type === 'int' || type === 'number') {
-      value = Number(value);
-    } else if (type === 'bool' || type === 'boolean') {
-      value = value.trim().toLowerCase() === 'true';
-    } else if (type === 'str' || type === 'String' || type === 'string') {
-      value = value.replace(/['"]/g, '').trim();
-    }
-    args.push(value);
-  }
-  return args;
-}
-
 // Wraps Java code in a Solution class if not already wrapped
 function wrapJavaMethod(methodCode, funcName, args, inputTypes, returnType) {
   const argList = Object.entries(inputTypes).map(
@@ -574,34 +540,6 @@ function isArrayType(type) {
   return /\[\]|\bList\b|\bvector\b/.test(type);
 }
 
-// Parse user input string into arguments, respecting types
-function parseInputs(inputString, inputTypes, lang) {
-  const lines = inputString.trim().split('\n');
-  const argNames = Object.keys(inputTypes);
-  let args = [];
-
-  for (let i = 0; i < argNames.length; i++) {
-    let value = lines[i];
-    let type = inputTypes[argNames[i]];
-
-    if (isArrayType(type)) {
-      // Remove brackets, split, and trim
-      let arr = value.replace(/[\[\]]/g, '').split(',').map(v => v.trim());
-      // For string arrays, remove quotes
-      if (/str|String/.test(type)) arr = arr.map(v => v.replace(/^['"]|['"]$/g, ""));
-      value = arr;
-    } else if (/int|number/.test(type)) {
-      value = Number(value.trim());
-    } else if (/bool|boolean/.test(type)) {
-      value = value.trim().toLowerCase() === 'true';
-    } else if (/str|String|string/.test(type)) {
-      value = value.replace(/^['"]|['"]$/g, "").trim();
-    }
-    args.push(value);
-  }
-  return args;
-}
-
 
 
 
@@ -632,20 +570,5 @@ int main() {
     return 0;
 }
 `.trim();
-}
-
-
-// Generate function call for Python and JavaScript
-function generateInvocationCode(lang, funcName, parsedArgs, inputTypes, returnType) {
-  const argList = Object.entries(inputTypes).map(
-    ([name, type], idx) => formatArg(parsedArgs[idx], type, lang)
-  ).join(', ');
-  if (lang === 'python') {
-    return `print(${funcName}(${argList}))`;
-  }
-  if (lang === 'javascript') {
-    return `console.log(${funcName}(${argList}));`;
-  }
-  return '';
 }
 
