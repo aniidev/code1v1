@@ -17,6 +17,9 @@ export async function login(email, password) {
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   const uid = userCredential.user.uid;
   const userDoc = await getDoc(doc(db, "users", uid));
-  return userDoc.data();
+  return {
+    uid,               // <-- Add this line
+    ...userDoc.data()  // <-- Spread the Firestore data
+  };
 }
 

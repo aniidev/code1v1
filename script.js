@@ -12,6 +12,35 @@ if (userData) {
     `Welcome, ${userData.username}! ELO: ${userData.elo}`;
 }
 
+socket.on('playerInfo', ({ self, opponent }) => {
+  document.getElementById("user").textContent = self;
+  document.getElementById("opponent").textContent = opponent;
+});
+
+socket.on('registerUser', async ({ userId }) => {
+  
+  socket.userId = userId;
+    if (!userId) {
+    console.error('registerUser: userId is missing or empty!');
+    return;
+  }
+  const userDoc = await db.collection("users").doc(userId).get();
+  if (userDoc.exists) {
+    socket.username = userDoc.data().username;
+  } else {
+    socket.username = "Player"; // fallback
+  }
+});
+window.addEventListener('DOMContentLoaded', () => {
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  if (userData && userData.uid) {
+    socket.emit('registerUser', { userId: userData.uid });
+  } else {
+    // Optionally redirect to login if not logged in
+    window.location.href = "login.html";
+  }
+});
+
 function createRoom() {
   room = Math.random().toString(36).substring(2, 5).toUpperCase();
   socket.emit('joinRoom', room);
@@ -86,21 +115,10 @@ function submitCode() {
 
 
 socket.on('result', (msg) => {
-   document.getElementById('game').style.display = 'none';
+  console.log('Received result:', msg);
+    document.getElementById('game').style.display = 'none';
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('end-status').innerText = msg;
-  if(won)
-    {
-      document.getElementById('score').innerHTML = 820; //make elo system later
-      document.getElementById('elo-change').style.color = 'green';
-      document.getElementById('elo-change').innerHTML = 20;
-    } 
-    else
-    {
-       document.getElementById('score').innerHTML = 780; //make elo system later
-       document.getElementById('elo-change').style.color = 'red';
-      document.getElementById('elo-change').innerHTML = -20;
-    }
 });
 
 socket.on('connect_error', (err) => {
@@ -111,6 +129,13 @@ socket.on('invalidRoom', (msg) => {
   alert(msg);
   document.getElementById('lobby').style.display = 'block';
   document.getElementById('game').style.display = 'none';
+});
+
+socket.on('eloUpdate', ({ elo, change }) => {
+  document.getElementById('score').innerHTML = elo;
+  const eloChangeElem = document.getElementById('elo-change');
+  eloChangeElem.style.color = change > 0 ? 'green' : 'red';
+  eloChangeElem.innerHTML = (change > 0 ? '+' : '') + change;
 });
 
 function findPublicMatch() {
@@ -572,3 +597,10 @@ int main() {
 `.trim();
 }
 
+function updateElo(winnerElo, loserElo) {
+  const k = 32;
+  const expectedWin = 1 / (1 + 10 ** ((loserElo - winnerElo) / 400));
+  const newWinnerElo = Math.round(winnerElo + k * (1 - expectedWin));
+  const newLoserElo = Math.round(loserElo + k * (0 - (1 - expectedWin)));
+  return [newWinnerElo, newLoserElo];
+}
