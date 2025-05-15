@@ -42,7 +42,7 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logInBtn').style.display = 'none';
     document.getElementById('logOutBtn').style.display = 'block';
   } else {
-    window.location.href = "login.html";
+    
       document.getElementById('signUpBtn').style.display = 'block';
       document.getElementById('logInBtn').style.display = 'block';
       document.getElementById('logOutBtn').style.display = 'none';

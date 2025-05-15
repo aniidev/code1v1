@@ -15,7 +15,7 @@ document.querySelector("form").addEventListener("submit", async (event) => {
 
   try {
     await register(email, password, username);
-    document.getElementById('status').innerHTmL = "Registration successful! You can now log in.";
+    window.href = "index.html";
   } catch (e) {
     document.getElementById('status').innerHTML = "Registration failed: " + e.message;
   }

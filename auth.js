@@ -28,3 +28,14 @@ window.logout = async function() {
   localStorage.removeItem("userData");
   window.location.href = "login.html"; 
 };
+async function fetchLeaderboard() {
+  const usersRef = collection(db, "users");
+  const q = query(usersRef, orderBy("elo", "desc"));
+  const snapshot = await getDocs(q);
+
+  const users = [];
+  snapshot.forEach(doc => {
+    users.push(doc.data());
+  });
+  return users;
+}

@@ -6,235 +6,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Additional styles specific to leaderboard */
-    .leaderboard-container {
-      margin-top: 2rem;
-    }
-    
-    .leaderboard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-    
-    .leaderboard-header h2 {
-      margin-bottom: 0;
-    }
-    
-    .filter-options {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
-    
-    .filter-options select {
-      background-color: #1e1e1e;
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 0.9rem;
-      outline: none;
-    }
-    
-    .filter-options select:focus {
-      border-color: rgba(22, 246, 107, 0.5);
-      box-shadow: 0 0 0 2px rgba(22, 246, 107, 0.2);
-    }
-    
-    .leaderboard-table {
-      width: 100%;
-      border-collapse: collapse;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
-    
-    .leaderboard-table th,
-    .leaderboard-table td {
-      padding: 1rem;
-      text-align: left;
-    }
-    
-    .leaderboard-table th {
-      background-color: #1a1a1a;
-      color: #16f66b;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-      letter-spacing: 1px;
-    }
-    
-    .leaderboard-table tr {
-      background-color: #202020;
-      transition: background-color 0.2s ease;
-    }
-    
-    .leaderboard-table tr:nth-child(even) {
-      background-color: #1e1e1e;
-    }
-    
-    .leaderboard-table tr:hover {
-      background-color: #252525;
-    }
-    
-    .rank {
-      font-weight: 700;
-      text-align: center;
-      width: 60px;
-    }
-    
-    .top-rank {
-      font-size: 1.2rem;
-      color: #16f66b;
-    }
-    
-    .player-info {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-    }
-    
-    .player-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      color: #fff;
-    }
-    
-    .player-name {
-      font-weight: 600;
-    }
-    
-    .stats {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    .stats-label {
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 0.8rem;
-    }
-    
-    .win-rate-bar {
-      width: 100%;
-      background-color: rgba(255, 255, 255, 0.1);
-      height: 6px;
-      border-radius: 3px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .win-rate-progress {
-      position: absolute;
-      left: 0;
-      top: 0;
-      height: 100%;
-      background-color: #16f66b;
-    }
-    
-    .pagination {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 2rem;
-    }
-    
-    .pagination button {
-      background-color: #1e1e1e;
-      color: #e4e4e4;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      font-size: 0.9rem;
-    }
-    
-    .pagination button.active {
-      background-color: #16f66b;
-      color: #0a0a0a;
-      border: none;
-    }
-    
-    .your-rank-highlight {
-      position: relative;
-    }
-    
-    .your-rank-highlight::after {
-      content: "You";
-      position: absolute;
-      right: 1rem;
-      background-color: rgba(22, 246, 107, 0.2);
-      color: #16f66b;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    
-    /* Stats cards */
-    .stats-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-    
-    .stats-card {
-      background-color: #202020;
-      border-radius: 10px;
-      padding: 1.5rem;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .stats-card::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 60px;
-      height: 60px;
-      background: radial-gradient(circle, rgba(22, 246, 107, 0.1) 0%, rgba(22, 246, 107, 0) 70%);
-      z-index: 0;
-    }
-    
-    .stats-card-label {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 0.85rem;
-      margin-bottom: 0.5rem;
-    }
-    
-    .stats-card-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #fff;
-    }
-    
-    .stats-card-subtext {
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.6);
-      margin-top: 0.5rem;
-    }
-    
-    .positive-trend {
-      color: #16f66b;
-    }
-    
-    .negative-trend {
-      color: #ff5c5c;
-    }
+    /* (Your existing leaderboard styles here, unchanged) */
+    .leaderboard-container { margin-top: 2rem; }
+    .leaderboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .leaderboard-header h2 { margin-bottom: 0; }
+    .filter-options { display: flex; gap: 1rem; align-items: center; }
+    .filter-options select { background-color: #1e1e1e; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; outline: none; }
+    .filter-options select:focus { border-color: rgba(22, 246, 107, 0.5); box-shadow: 0 0 0 2px rgba(22, 246, 107, 0.2); }
+    .leaderboard-table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+    .leaderboard-table th, .leaderboard-table td { padding: 1rem; text-align: left; }
+    .leaderboard-table th { background-color: #1a1a1a; color: #16f66b; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+    .leaderboard-table tr { background-color: #202020; transition: background-color 0.2s ease; }
+    .leaderboard-table tr:nth-child(even) { background-color: #1e1e1e; }
+    .leaderboard-table tr:hover { background-color: #252525; }
+    .rank { font-weight: 700; text-align: center; width: 60px; }
+    .top-rank { font-size: 1.2rem; color: #16f66b; }
+    .player-info { display: flex; align-items: center; gap: 0.8rem; }
+    .player-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #333; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #fff; }
+    .player-name { font-weight: 600; }
+    .stats { display: flex; align-items: center; gap: 5px; }
+    .stats-label { color: rgba(255, 255, 255, 0.5); font-size: 0.8rem; }
+    .win-rate-bar { width: 100%; background-color: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; position: relative; overflow: hidden; }
+    .win-rate-progress { position: absolute; left: 0; top: 0; height: 100%; background-color: #16f66b; }
+    .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem; }
+    .pagination button { background-color: #1e1e1e; color: #e4e4e4; border: 1px solid rgba(255, 255, 255, 0.1); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 0.9rem; }
+    .pagination button.active { background-color: #16f66b; color: #0a0a0a; border: none; }
+    .your-rank-highlight { position: relative; }
+    .your-rank-highlight::after { content: "You"; position: absolute; right: 1rem; background-color: rgba(22, 246, 107, 0.2); color: #16f66b; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stats-card { background-color: #202020; border-radius: 10px; padding: 1.5rem; position: relative; overflow: hidden; }
+    .stats-card::after { content: ''; position: absolute; top: 0; right: 0; width: 60px; height: 60px; background: radial-gradient(circle, rgba(22, 246, 107, 0.1) 0%, rgba(22, 246, 107, 0) 70%); z-index: 0; }
+    .stats-card-label { color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .stats-card-value { font-size: 2rem; font-weight: 700; color: #fff; }
+    .stats-card-subtext { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem; }
+    .positive-trend { color: #16f66b; }
+    .negative-trend { color: #ff5c5c; }
   </style>
 </head>
 <body>
@@ -272,34 +78,21 @@
       </div>
     </div>
     
-    <!-- Personal Stats -->
+
     <div class="stats-cards">
-      <div class="stats-card">
-        <div class="stats-card-label">Your Rank</div>
-        <div class="stats-card-value">#42</div>
-        <div class="stats-card-subtext">
-          <span class="positive-trend">↑ 5 this week</span>
-        </div>
-      </div>
-      <div class="stats-card">
-        <div class="stats-card-label">Win Rate</div>
-        <div class="stats-card-value">68%</div>
-        <div class="stats-card-subtext">47 wins / 22 losses</div>
-      </div>
-      <div class="stats-card">
-        <div class="stats-card-label">Avg. Solve Time</div>
-        <div class="stats-card-value">3:24</div>
-        <div class="stats-card-subtext">
-          <span class="positive-trend">↓ 12s from last month</span>
-        </div>
-      </div>
-      <div class="stats-card">
-        <div class="stats-card-label">Total Points</div>
-        <div class="stats-card-value">1,250</div>
-        <div class="stats-card-subtext">
-          <span class="positive-trend">+180 this month</span>
-        </div>
-      </div>
+      <div class="stats-cards">
+  <div class="stats-card">
+    <div class="stats-card-label">Your Rank</div>
+    <div class="stats-card-value" id="your-rank">--</div>
+    <div class="stats-card-subtext" id="your-rank-trend"></div>
+  </div>
+
+  <div class="stats-card">
+    <div class="stats-card-label">Rating</div>
+    <div class="stats-card-value" id="your-elo">--</div>
+    <div class="stats-card-subtext" id="your-elo-trend"></div>
+  </div>
+</div>
     </div>
     
     <!-- Leaderboard Table -->
@@ -315,190 +108,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td class="rank top-rank">1</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #FF7E1D;">JS</div>
-              <div class="player-name">jsNinja</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>92%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 92%"></div>
-              </div>
-            </div>
-          </td>
-          <td>243</td>
-          <td>1:48</td>
-          <td>3,827</td>
-        </tr>
-        <tr>
-          <td class="rank top-rank">2</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #7E57C2;">PY</div>
-              <div class="player-name">PythonWhisperer</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>88%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 88%"></div>
-              </div>
-            </div>
-          </td>
-          <td>187</td>
-          <td>2:12</td>
-          <td>3,641</td>
-        </tr>
-        <tr>
-          <td class="rank top-rank">3</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #26A69A;">JD</div>
-              <div class="player-name">JavaDev</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>85%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 85%"></div>
-              </div>
-            </div>
-          </td>
-          <td>201</td>
-          <td>2:05</td>
-          <td>3,498</td>
-        </tr>
-        <tr>
-          <td class="rank">4</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #EC407A;">RS</div>
-              <div class="player-name">RustySolver</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>83%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 83%"></div>
-              </div>
-            </div>
-          </td>
-          <td>156</td>
-          <td>2:23</td>
-          <td>3,251</td>
-        </tr>
-        <tr>
-          <td class="rank">5</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #42A5F5;">GO</div>
-              <div class="player-name">GolangGuru</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>81%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 81%"></div>
-              </div>
-            </div>
-          </td>
-          <td>175</td>
-          <td>2:31</td>
-          <td>3,102</td>
-        </tr>
-        <tr class="your-rank-highlight">
-          <td class="rank">42</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #16f66b;">ME</div>
-              <div class="player-name">YourUsername</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>68%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 68%"></div>
-              </div>
-            </div>
-          </td>
-          <td>69</td>
-          <td>3:24</td>
-          <td>1,250</td>
-        </tr>
-        <tr>
-          <td class="rank">43</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #5E35B1;">CT</div>
-              <div class="player-name">CodeTraveler</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>67%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 67%"></div>
-              </div>
-            </div>
-          </td>
-          <td>72</td>
-          <td>3:29</td>
-          <td>1,238</td>
-        </tr>
-        <tr>
-          <td class="rank">44</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #EF5350;">KB</div>
-              <div class="player-name">KeyboardWarrior</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>66%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 66%"></div>
-              </div>
-            </div>
-          </td>
-          <td>65</td>
-          <td>3:31</td>
-          <td>1,219</td>
-        </tr>
-        <tr>
-          <td class="rank">45</td>
-          <td>
-            <div class="player-info">
-              <div class="player-avatar" style="background-color: #66BB6A;">CS</div>
-              <div class="player-name">CSharpShooter</div>
-            </div>
-          </td>
-          <td>
-            <div class="stats">
-              <span>65%</span>
-              <div class="win-rate-bar">
-                <div class="win-rate-progress" style="width: 65%"></div>
-              </div>
-            </div>
-          </td>
-          <td>60</td>
-          <td>3:35</td>
-          <td>1,202</td>
-        </tr>
+        <!-- Dynamic rows will be inserted here -->
       </tbody>
     </table>
     
-    <!-- Pagination --> n">
+    <!-- Pagination (static for now) -->
+    <div class="pagination">
       <button>&lt;</button>
       <button>1</button>
       <button class="active">2</button>
@@ -509,30 +124,7 @@
     </div>
   </div>
 
-  <script>
-    // Simple script for demonstration purposes
-    document.addEventListener('DOMContentLoaded', function() {
-      // Filter change handlers
-      document.getElementById('timeFilter').addEventListener('change', function() {
-        console.log('Time filter changed:', this.value);
-        // Would normally fetch new data
-      });
-      
-      document.getElementById('categoryFilter').addEventListener('change', function() {
-        console.log('Category filter changed:', this.value);
-        // Would normally fetch new data
-      });
-      
-      // Pagination handlers
-      const paginationButtons = document.querySelectorAll('.pagination button');
-      paginationButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          paginationButtons.forEach(btn => btn.classList.remove('active'));
-          this.classList.add('active');
-          // Would normally fetch new page data
-        });
-      });
-    });
-  </script>
+  <!-- Leaderboard JS (uses your firebase.js) -->
+  <script type="module" src="leaderboard.js"></script>
 </body>
 </html>
