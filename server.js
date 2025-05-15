@@ -59,28 +59,44 @@ socket.on('joinRoom', async incomingRoom => {
   rooms[room].push(socket.id);
 
   if (rooms[room].length === 2) {
-    // Get both sockets
-    const player1Socket = io.sockets.sockets.get(rooms[room][0]);
-    const player2Socket = io.sockets.sockets.get(rooms[room][1]);
+  // Get both sockets
+  const player1Socket = io.sockets.sockets.get(rooms[room][0]);
+  const player2Socket = io.sockets.sockets.get(rooms[room][1]);
 
-    // Wait for usernames
-    const getUsername = async (sock) => {
-      if (sock.username) return sock.username;
-      if (sock.userId) {
-        const docSnap = await db.collection("users").doc(sock.userId).get();
-        return docSnap.exists ? docSnap.data().username : "Player";
+  // Helper to get username and elo
+  const getUserInfo = async (sock) => {
+    if (sock.userId) {
+      const docSnap = await db.collection("users").doc(sock.userId).get();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        return {
+          username: data.username || "Player",
+          elo: data.elo || 1000
+        };
       }
-      return "Player";
-    };
-    const player1Username = await getUsername(player1Socket);
-    const player2Username = await getUsername(player2Socket);
+    }
+    return { username: "Player", elo: 1000 };
+  };
 
-    // Send usernames to each player
-    player1Socket.emit('playerInfo', { self: player1Username, opponent: player2Username });
-    player2Socket.emit('playerInfo', { self: player2Username, opponent: player1Username });
 
-    io.to(room).emit('startGame', getRandomQuestion());
-  }
+  const player1Info = await getUserInfo(player1Socket);
+  const player2Info = await getUserInfo(player2Socket);
+
+  player1Socket.emit('playerInfo', {
+    self: player1Info.username,
+    opponent: player2Info.username,
+    selfElo: player1Info.elo,
+    opponentElo: player2Info.elo
+  });
+  player2Socket.emit('playerInfo', {
+    self: player2Info.username,
+    opponent: player1Info.username,
+    selfElo: player2Info.elo,
+    opponentElo: player1Info.elo
+  });
+
+  io.to(room).emit('startGame', getRandomQuestion());
+}
 });
   // PUBLIC MATCHMAKING
  socket.on('publicMatch', async () => {
@@ -99,21 +115,37 @@ socket.on('joinRoom', async incomingRoom => {
     player1.room = roomCode;
     player2.room = roomCode;
 
-    // Wait for both usernames to be loaded (in case registerUser hasn't finished)
-    const getUsername = async (sock) => {
-      if (sock.username) return sock.username;
+    // Helper to get username and elo
+    const getUserInfo = async (sock) => {
       if (sock.userId) {
         const docSnap = await db.collection("users").doc(sock.userId).get();
-        return docSnap.exists ? docSnap.data().username : "Player";
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          return {
+            username: data.username || "Player",
+            elo: data.elo || 1000
+          };
+        }
       }
-      return "Player";
+      return { username: "Player", elo: 1000 };
     };
-    const player1Username = await getUsername(player1);
-    const player2Username = await getUsername(player2);
 
-    // Send usernames to each player
-    player1.emit('playerInfo', { self: player1Username, opponent: player2Username });
-    player2.emit('playerInfo', { self: player2Username, opponent: player1Username });
+    const player1Info = await getUserInfo(player1);
+    const player2Info = await getUserInfo(player2);
+
+    // Send usernames and ELOs to each player
+    player1.emit('playerInfo', {
+      self: player1Info.username,
+      opponent: player2Info.username,
+      selfElo: player1Info.elo,
+      opponentElo: player2Info.elo
+    });
+    player2.emit('playerInfo', {
+      self: player2Info.username,
+      opponent: player1Info.username,
+      selfElo: player2Info.elo,
+      opponentElo: player1Info.elo
+    });
 
     const question = getRandomQuestion();
     io.to(roomCode).emit('startGame', question);
@@ -121,6 +153,7 @@ socket.on('joinRoom', async incomingRoom => {
     socket.emit('waitingForOpponent');
   }
 });
+
 
   // CODE SUBMISSION
 socket.on('submitCode', async ({ code, won }) => {
@@ -189,4 +222,10 @@ server.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
 });
 
-
+function updateElo(winnerElo, loserElo) {
+  const k = 32;
+  const expectedWin = 1 / (1 + 10 ** ((loserElo - winnerElo) / 400));
+  const newWinnerElo = Math.round(winnerElo + k * (1 - expectedWin));
+  const newLoserElo = Math.round(loserElo + k * (0 - (1 - expectedWin)));
+  return [newWinnerElo, newLoserElo];
+}

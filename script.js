@@ -10,15 +10,18 @@ const userData = JSON.parse(localStorage.getItem("userData"));
 if (userData) {
   document.getElementById("welcomeText").textContent =
     `Welcome, ${userData.username}! ELO: ${userData.elo}`;
+
 }
 
-socket.on('playerInfo', ({ self, opponent }) => {
+
+socket.on('playerInfo', ({ self, opponent, selfElo, opponentElo }) => {
   document.getElementById("user").textContent = self;
   document.getElementById("opponent").textContent = opponent;
+  document.getElementById("userElo").textContent = `rating: ${selfElo}`;
+  document.getElementById("opponentElo").textContent = `rating: ${opponentElo}`;
 });
 
 socket.on('registerUser', async ({ userId }) => {
-  
   socket.userId = userId;
     if (!userId) {
     console.error('registerUser: userId is missing or empty!');
@@ -35,9 +38,14 @@ window.addEventListener('DOMContentLoaded', () => {
   const userData = JSON.parse(localStorage.getItem("userData"));
   if (userData && userData.uid) {
     socket.emit('registerUser', { userId: userData.uid });
+    document.getElementById('signUpBtn').style.display = 'none';
+    document.getElementById('logInBtn').style.display = 'none';
+    document.getElementById('logOutBtn').style.display = 'block';
   } else {
-    // Optionally redirect to login if not logged in
     window.location.href = "login.html";
+      document.getElementById('signUpBtn').style.display = 'block';
+      document.getElementById('logInBtn').style.display = 'block';
+      document.getElementById('logOutBtn').style.display = 'none';
   }
 });
 
@@ -74,7 +82,6 @@ socket.on('startGame', (question) => {
       clearInterval(vsInterval);
       document.getElementById('vsScreen').style.display = 'none';
       document.getElementById('game').style.display = 'block';
-
 
       document.getElementById('questionTitle').innerText = question.title;
       document.getElementById('questionDescription').innerText = question.description;
@@ -132,10 +139,12 @@ socket.on('invalidRoom', (msg) => {
 });
 
 socket.on('eloUpdate', ({ elo, change }) => {
-  document.getElementById('score').innerHTML = elo;
+  document.getElementById('elo-value').textContent = elo;
+  userData.elo = elo;
+  localStorage.setItem("userData", JSON.stringify(userData));
   const eloChangeElem = document.getElementById('elo-change');
   eloChangeElem.style.color = change > 0 ? 'green' : 'red';
-  eloChangeElem.innerHTML = (change > 0 ? '+' : '') + change;
+  eloChangeElem.textContent = (change > 0 ? '+' : '') + change;
 });
 
 function findPublicMatch() {
@@ -597,10 +606,3 @@ int main() {
 `.trim();
 }
 
-function updateElo(winnerElo, loserElo) {
-  const k = 32;
-  const expectedWin = 1 / (1 + 10 ** ((loserElo - winnerElo) / 400));
-  const newWinnerElo = Math.round(winnerElo + k * (1 - expectedWin));
-  const newLoserElo = Math.round(loserElo + k * (0 - (1 - expectedWin)));
-  return [newWinnerElo, newLoserElo];
-}
