@@ -55,6 +55,7 @@ body {
   z-index: 10;
 }
 
+
 .logo {
   display: flex;
   align-items: center;
@@ -75,8 +76,13 @@ body {
 }
 
 .nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  gap: 2rem;
+  gap: 20px;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .nav a {

@@ -71,6 +71,8 @@ function joinRoom() {
 socket.on('startGame', (question) => {
   currentQuestion = question;
   document.getElementById('waitingScreen').style.display = 'none';
+  document.getElementById('publicWaiting').style.display = 'none';
+  document.getElementById('header').style.display = 'none';
   document.getElementById('vsScreen').style.display = 'block';
 
   let timeLeft = 5;
@@ -104,7 +106,7 @@ require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-e
 require(['vs/editor/editor.main'], function () {
   editor = monaco.editor.create(document.getElementById('editor'), {
     value: '',
-    language: 'javascript',
+    language: 'java',
     theme: 'vs-dark',
     fontSize: 20,
     automaticLayout: true,
@@ -123,9 +125,17 @@ function submitCode() {
 
 socket.on('result', (msg) => {
   console.log('Received result:', msg);
+  if(msg === "Wrong Answer")
+  {
+    document.getElementById('status').innerHTML = 'Wrong Answer';
+  }
+  else
+  {
     document.getElementById('game').style.display = 'none';
-  document.getElementById('endScreen').style.display = 'block';
-  document.getElementById('end-status').innerText = msg;
+    document.getElementById('endScreen').style.display = 'block';
+    document.getElementById('end-status').innerText = msg;
+  }
+    
 });
 
 socket.on('connect_error', (err) => {
@@ -150,17 +160,21 @@ socket.on('eloUpdate', ({ elo, change }) => {
 function findPublicMatch() {
   socket.emit('publicMatch');
   document.getElementById('lobby').style.display = 'none';
-  document.getElementById('waitingScreen').style.display = 'block';
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('publicWaiting').style.display = 'block';
 }
 
 socket.on('waitingForOpponent', () => {
-  document.getElementById('waitingScreen').innerText = 'Finding an opponent...';
+  document.getElementById('publicWaiting').innerText = 'Finding an opponent...';
 });
 
 function returnLobby()
 {
-    document.getElementById('lobby').style.display = 'block';
-    document.getElementById('endScreen').style.display = 'none';
+  window.location.reload(true);
+  document.getElementById('lobby').style.display = 'block';
+  document.getElementById('header').style.display = 'block';
+  document.getElementById('endScreen').style.display = 'none';
+    
 }
 function startGameTimer() {
   let totalSeconds = 15 * 60; // 15 minutes in seconds
@@ -207,15 +221,25 @@ function normalizeOutput(output, expectedType) {
 
 // Generate argument list for function call in each language
 function formatArg(val, type, lang) {
-  if (Array.isArray(val) || /\[\]|\bList\b|\bvector\b/.test(type)) {
+  const isList = /\[\]|\bList\b|\bvector\b/.test(type);
+  // detect element type for vectors/lists
+  if (isList) {
+    let elems = val.map(v => {
+      if (typeof v === 'string') return `"${v}"`;
+      return v; // number or boolean literal
+    }).join(', ');
     if (lang === 'python' || lang === 'javascript') {
-      return `[${val.map(v => typeof v === 'string' ? `"${v}"` : v).join(', ')}]`;
+      return `[${elems}]`;
     }
     if (lang === 'java') {
-      return `Arrays.asList(${val.map(v => `"${v}"`).join(', ')})`;
+      // infer generic type
+      const generic = typeof val[0] === 'number' ? 'Integer' : 'String';
+      return `Arrays.asList(${elems})`;
     }
     if (lang === 'cpp') {
-      return `{${val.map(v => `"${v}"`).join(', ')}}`;
+      // infer <T>
+      const T = typeof val[0] === 'number' ? 'int' : 'string';
+      return `{${elems}}`;  // vector<T> init-list
     }
   }
   if (typeof val === 'string') return `"${val.replace(/"/g, '\\"')}"`;
@@ -307,45 +331,91 @@ testCases.forEach(({ inputs, expected }, idx) => {
   }
   // --- JAVA ---
   if (lang === 'java') {
-    let importLine = '';
-    if (Object.values(inputTypes).some(type => /\bList\b/.test(type))) {
-      importLine = 'import java.util.*;';
-    }
-    let harness = `\n${importLine}\npublic class Solution {\n    // user code above\n    public static void main(String[] args) {\n`;
-    testCases.forEach((tc, idx) => {
-      const inputs = parseInputs(tc.input);
-      const formattedInputs = inputs.map((v, i) => formatArg(parseInputValue(v, inputTypes[argNames[i]]), inputTypes[argNames[i]], lang));
-      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
-      harness += `        try {\n`;
-      harness += `            Object result = new Solution().${funcName}(${formattedInputs.join(', ')});\n`;
-      harness += `            System.out.println("Case ${idx + 1}: " + (result.equals(${expected}) ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + result);\n`;
-      harness += `        } catch (Exception e) {\n`;
-      harness += `            System.out.println("Case ${idx + 1}: ERROR | " + e);\n`;
-      harness += `        }\n`;
-    });
-    harness += '    }\n}\n';
-    return harness;
+  let importLine = '';
+  if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
+    importLine = 'import java.util.*;';
   }
+  let harness = `
+${importLine}
+public class Solution {
+    // user code above
+    public static void main(String[] args) {
+  `;
+  testCases.forEach((tc, idx) => {
+    const inputs = parseInputs(tc.input);
+    const formatted = inputs.map((v,i) =>
+      formatArg(parseInputValue(v, inputTypes[argNames[i]]),
+                inputTypes[argNames[i]], lang));
+    const expected = formatArg(parseInputValue(tc.expectedOutput, returnType),
+                               returnType, lang);
+    harness += `
+        try {
+            Object result = new Solution().${funcName}(${formatted.join(', ')});
+            if (result.equals(${expected})) {
+                System.out.println("Case ${idx+1}: PASS | Expected: ${tc.expectedOutput} | Output: " + result);
+            } else {
+                System.out.println("Case ${idx+1}: FAIL | Expected: ${tc.expectedOutput} | Output: " + result);
+            }
+        } catch (Exception e) {
+            System.err.println("Case ${idx+1}: ERROR | " + e.getMessage());
+        }
+    `;
+  });
+  harness += `
+    }
+}
+`;
+  return harness;
+}
 
   // --- C++ ---
   if (lang === 'cpp') {
-    let harness = `\n#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n// user code above\nint main() {\n`;
-    testCases.forEach((tc, idx) => {
-      const inputs = parseInputs(tc.input);
-      const formattedInputs = inputs.map((v, i) => formatArg(parseInputValue(v, inputTypes[argNames[i]]), inputTypes[argNames[i]], lang));
-      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
-      harness += `    try {\n`;
-      harness += `        auto result = ${funcName}(${formattedInputs.join(', ')});\n`;
-      harness += `        cout << "Case ${idx + 1}: " << (result == ${expected} ? "PASS" : "FAIL") << " | Expected: ${tc.expectedOutput} | Output: " << result << endl;\n`;
-      harness += `    } catch (const exception& e) {\n`;
-      harness += `        cout << "Case ${idx + 1}: ERROR | " << e.what() << endl;\n`;
-      harness += `    }\n`;
+  let harness = `
+#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+// user code above
+int main() {
+`;
+  testCases.forEach((tc, idx) => {
+    const inputs = parseInputs(tc.input);
+    const formatted = inputs.map((v,i) =>
+      formatArg(parseInputValue(v, inputTypes[argNames[i]]),
+                inputTypes[argNames[i]], lang));
+    const expected = formatArg(parseInputValue(tc.expectedOutput, returnType),
+                               returnType, lang);
+    // declare each vector arg if needed
+    let decls = '';
+    inputs.forEach((v,i) => {
+      const t = inputTypes[argNames[i]];
+      if (/\bvector\b|\[\]/.test(t)) {
+        const elemType = typeof parseInputValue(v, t)[0] === 'number' ? 'int' : 'string';
+        decls += `    vector<${elemType}> ${argNames[i]} = ${formatted[i]};\n`;
+      }
     });
-    harness += `    return 0;\n}\n`;
-    return harness;
-  }
+    const argsList = inputs.map((_,i) =>
+      /\bvector\b|\[\]/.test(inputTypes[argNames[i]]) ? argNames[i] : formatted[i]
+    ).join(', ');
+    harness += `
+${decls}
+    try {
+      auto result = ${funcName}(${argsList});
+      cout << "Case ${idx+1}: " << (result == ${expected} ? "PASS" : "FAIL")
+           << " | Expected: ${tc.expectedOutput} | Output: " << result << endl;
+    } catch (const exception& e) {
+      cerr << "Case ${idx+1}: ERROR | " << e.what() << endl;
+    }
+`;
+  });
+  harness += `
+    return 0;
+}
+`;
+  return harness;
+}
 
-  // --- JavaScript already works, so just return empty string ---
+
   return '';
 }
 
@@ -375,6 +445,9 @@ async function runCode() {
       "java": "java",
       "cpp": "cpp"
     };
+    const fileName = lang === 'java'
+  ? 'Solution.java'
+  : `main.${fileExtensions[lang]}`;
 
     const requestData = {
       language: lang,
@@ -385,7 +458,7 @@ async function runCode() {
         "cpp": "10.2.0"
       }[lang] || "*",
       files: [{
-        name: `main.${fileExtensions[lang] || lang}`,
+        name: fileName,
         content: fullCode
       }],
       stdin: "",
@@ -402,6 +475,8 @@ async function runCode() {
 
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     const result = await response.json();
+    const stdoutLines = result.run.stdout?.split('\n').filter(l => l) || [];
+    const stderrText  = result.run.stderr?.trim();
 
     // Process results
     let statusHTML = '';
@@ -421,6 +496,10 @@ async function runCode() {
       }
       
     });
+    if (stderrText) {
+  outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
+}
+
 
     // Final status summary
     const allPassed = passed === testCases.length;
@@ -429,6 +508,9 @@ async function runCode() {
                  `${allPassed ? ' 🎉' : ''}</div>` + statusHTML;
 
     document.getElementById('status').innerHTML = statusHTML;
+    if (stderrText) {
+      outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
+    }
     document.getElementById('output').innerHTML = outputHTML || "<pre>No output</pre>";
 
     won = allPassed;
@@ -457,7 +539,11 @@ function setLanguage() {
   const funcName = currentQuestion.functionName || 'functionName';
   const inputs = currentQuestion.inputs?.[lang] || {};
   const returnType = currentQuestion.output || '';
-
+   const rawReturn = currentQuestion.output || '';
+  let returnTypeForJava = rawReturn;
+  if (lang === 'java' && (rawReturn === 'bool' || rawReturn === 'boolean')) {
+    returnTypeForJava = 'boolean';
+  }
   let fullTemplate = '';
 
   if (rawSignature) {
@@ -492,7 +578,7 @@ function setLanguage() {
         fullTemplate = `function ${funcName}(${params}) {\n  // solution here\n}`;
         break;
       case 'java':
-        fullTemplate = `public ${returnType} ${funcName}(${params}) {\n    // solution here\n}`;
+        fullTemplate = `public static ${returnTypeForJava} ${funcName}(${params}) {\n    // solution here\n}`;
         break;
       case 'cpp':
         fullTemplate = `${returnType} ${funcName}(${params}) {\n    // solution here\n}`;
@@ -506,28 +592,40 @@ function setLanguage() {
   editor.setValue(fullTemplate);
 }
 
-// Wraps Java code in a Solution class if not already wrapped
+
 function wrapJavaMethod(methodCode, funcName, args, inputTypes, returnType) {
-  const argList = Object.entries(inputTypes).map(
-    ([name, type], idx) => formatArg(args[idx], type, 'java')
+  // only import java.util if we need Lists
+  const importLine = Object.values(inputTypes).some(t => /\bList\b/.test(t))
+    ? 'import java.util.*;'
+    : '';
+
+  // build the argument list for the call in main()
+  const argNames = Object.keys(inputTypes);
+  const argList = args.map((val, i) =>
+    formatArg(val, inputTypes[argNames[i]], 'java')
   ).join(', ');
-  let printStatement = `System.out.println(new Solution().${funcName}(${argList}));`;
-  let importLine = '';
-  if (Object.values(inputTypes).some(type => /\bList\b/.test(type))) {
-    importLine = 'import java.util.*;';
-  }
+
+  // decide whether to call statically or via instance
+  const callExpr = methodCode.includes(' static ')
+    ? `Solution.${funcName}(${argList})`
+    : `new Solution().${funcName}(${argList})`;
+
   return `
 ${importLine}
 public class Solution {
 ${methodCode}
 
-public static void main(String[] args) {
-    ${printStatement}
-}
+  public static void main(String[] args) {
+    try {
+      Object result = ${callExpr};
+      System.out.println(result);
+    } catch (Exception e) {
+      System.err.println("ERROR: " + e.getMessage());
+    }
+  }
 }
 `.trim();
 }
-
 
 // Generates the invocation code for each language
 function generateInvocationCode(lang, funcName, args, returnType) {

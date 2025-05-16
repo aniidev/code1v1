@@ -14,17 +14,16 @@
   <script type="module" src="./auth.js"></script>
 </head> 
 <body>   
-  <div class="header">     
+  <div class="header" id="header">     
     <div class="logo">Code1v1</div>     
     <div class="nav">       
-      <a href="#">Home</a>       
-      <a href="#">Challenges</a>       
+      <a href="#">Home</a>            
       <a href="leaderboard.html">Leaderboard</a>     
     </div>     
     <div class="actions">       
       <button onclick="location.href='signup.html'" style="background-color: transparent; color: #e4e4e4; border: 1px solid rgba(255,255,255,0.1);" id="signUpBtn">Sign Up</button>       
       <button onclick="location.href='login.html'" id="logInBtn">Login</button>  
-      <button onclick="logout()" id="logOutBtn">Log Out</button>        
+      <button onclick="logout()" id="logOutBtn" style="background-color: transparent; color: #e4e4e4; border: 1px solid rgba(255,255,255,0.1);">Log Out</button>        
     </div>   
   </div>      
   
@@ -50,7 +49,9 @@
     <p>Share your room code with a friend to start the challenge!</p>     
     <div>Room Code: <span id="waitingRoomCode">ABCD1234</span></div>   
   </div>      
-  
+  <div id="publicWaiting" class="container" style="display:none;">     
+    <p>Opponent found</p>
+  </div>      
   <!-- VS Screen -->   
   <div id="vsScreen" class="container">     
     <h2>CODING 1V1</h2>     

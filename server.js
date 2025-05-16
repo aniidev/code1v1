@@ -216,15 +216,7 @@ socket.on('submitCode', async ({ code, won }) => {
     io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
   }
 } else if (myUserId && opponentUserId) {
-  const myDocRef = db.collection("users").doc(myUserId);
-  const myDoc = await myDocRef.get();
-  const myData = myDoc.data();
 
-  const newTotalMatches = (myData.totalMatches || 0) + 1;
-
-  await myDocRef.update({
-    totalMatches: newTotalMatches
-  });
 
   socket.emit('result', 'Wrong Answer');
 }
@@ -258,7 +250,7 @@ server.listen(3000, () => {
 function updateElo(winnerElo, loserElo) {
   const k = 32;
   const expectedWin = 1 / (1 + 10 ** ((loserElo - winnerElo) / 400));
-  const newWinnerElo = Math.round(winnerElo + k * (1 - expectedWin));
-  const newLoserElo = Math.round(loserElo + k * (0 - (1 - expectedWin)));
+  const newWinnerElo = Math.ceil(winnerElo + k * (1 - expectedWin));
+  const newLoserElo = Math.ceil(loserElo + k * (0 - (1 - expectedWin)));
   return [newWinnerElo, newLoserElo];
 }

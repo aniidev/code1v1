@@ -6,7 +6,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* (Your existing leaderboard styles here, unchanged) */
     .leaderboard-container { margin-top: 2rem; }
     .leaderboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .leaderboard-header h2 { margin-bottom: 0; }
@@ -41,6 +40,8 @@
     .stats-card-subtext { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem; }
     .positive-trend { color: #16f66b; }
     .negative-trend { color: #ff5c5c; }
+    .nav {  position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; top: 50%;
+  transform: translate(-50%, -50%);}
   </style>
 </head>
 <body>
@@ -48,12 +49,10 @@
     <div class="logo">Code1v1</div>
     <div class="nav">
       <a href="index.html">Home</a>
-      <a href="challenges.html">Challenges</a>
       <a href="leaderboard.html" class="active">Leaderboard</a>
     </div>
     <div class="actions">
-      <button style="background-color: transparent; color: #e4e4e4; border: 1px solid rgba(255,255,255,0.1);">Sign Up</button>
-      <button>Login</button>
+
     </div>
   </div>
 
