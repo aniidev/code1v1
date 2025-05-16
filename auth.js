@@ -10,7 +10,8 @@ export async function register(email, password, username) {
   await setDoc(doc(db, "users", uid), {
     username,
     email,
-    elo: 1000
+    elo: 1000,
+    wins: 0
   });
 }
 
@@ -19,8 +20,8 @@ export async function login(email, password) {
   const uid = userCredential.user.uid;
   const userDoc = await getDoc(doc(db, "users", uid));
   return {
-    uid,               // <-- Add this line
-    ...userDoc.data()  // <-- Spread the Firestore data
+    uid,
+    ...userDoc.data()  
   };
 }
 window.logout = async function() {

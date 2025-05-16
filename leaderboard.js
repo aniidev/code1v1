@@ -21,6 +21,9 @@ function renderLeaderboard(users, currentUid) {
       ? user.username.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : "??";
     const isCurrentUser = user.uid === currentUid;
+    const winRate = (user.totalMatches && user.wins)
+      ? Math.round((user.wins / user.totalMatches) * 100)
+      : 0;
     const tr = document.createElement('tr');
     if (isCurrentUser) tr.classList.add("your-rank-highlight");
     tr.innerHTML = `
@@ -31,8 +34,15 @@ function renderLeaderboard(users, currentUid) {
           <div class="player-name">${user.username || "Unknown"}</div>
         </div>
       </td>
-      <td>--</td>
-      <td>--</td>
+      <td>
+        <div class="stats">
+          <span>${winRate}%</span>
+          <div class="win-rate-bar">
+            <div class="win-rate-progress" style="width: ${winRate}%"></div>
+          </div>
+        </div>
+      </td>
+      <td>${user.totalMatches ?? 0}</td>
       <td>--</td>
       <td>${user.elo ?? 0}</td>
     `;
@@ -40,18 +50,24 @@ function renderLeaderboard(users, currentUid) {
   });
 }
 
-// Update "Your Rank" and "Total Points" cards
+// Update "Your Rank", "Wins", "Total Matches", "Total Points"
 function updateYourStats(users, currentUid) {
   const yourRankElem = document.getElementById('your-rank');
   const yourEloElem = document.getElementById('your-elo');
-  // Find the user in the sorted list
+  const yourWinsElem = document.getElementById('your-wins');
+  const yourMatchesElem = document.getElementById('your-matches');
   const idx = users.findIndex(u => u.uid === currentUid);
   if (idx !== -1) {
+    const user = users[idx];
     yourRankElem.textContent = `#${idx + 1}`;
-    yourEloElem.textContent = users[idx].elo ?? "--";
+    yourEloElem.textContent = user.elo ?? "--";
+    yourWinsElem.textContent = user.wins ?? "0";
+    yourMatchesElem.textContent = user.totalMatches ?? "0";
   } else {
     yourRankElem.textContent = "--";
     yourEloElem.textContent = "--";
+    yourWinsElem.textContent = "--";
+    yourMatchesElem.textContent = "--";
   }
 }
 

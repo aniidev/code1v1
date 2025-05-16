@@ -170,31 +170,64 @@ socket.on('submitCode', async ({ code, won }) => {
   const opponentUserId = io.sockets.sockets.get(opponentSocketId)?.userId;
 
   if (won && myUserId && opponentUserId) {
-    // Fetch current ELOs
-    const myDoc = await db.collection("users").doc(myUserId).get();
-    const opponentDoc = await db.collection("users").doc(opponentUserId).get();
-    const myElo = myDoc.data().elo;
-    const opponentElo = opponentDoc.data().elo;
+  // Fetch current ELOs and stats
+  const myDocRef = db.collection("users").doc(myUserId);
+  const opponentDocRef = db.collection("users").doc(opponentUserId);
 
-    // Calculate new ELOs
-    const [newWinnerElo, newLoserElo] = updateElo(myElo, opponentElo);
+  const myDoc = await myDocRef.get();
+  const opponentDoc = await opponentDocRef.get();
 
-    // Update Firestore
-    await db.collection("users").doc(myUserId).update({ elo: newWinnerElo });
-    await db.collection("users").doc(opponentUserId).update({ elo: newLoserElo });
+  const myData = myDoc.data();
+  const opponentData = opponentDoc.data();
 
-    // Send result and ELO to both clients
-    socket.emit('result', 'You won!');
-    socket.emit('eloUpdate', { elo: newWinnerElo, change: newWinnerElo - myElo });
+  const myElo = myData.elo;
+  const opponentElo = opponentData.elo;
 
-    if (opponentSocketId) {
-      io.to(opponentSocketId).emit('result', 'Opponent AC - You lose');
-      io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
-    }
-  } else if (myUserId && opponentUserId) {
-    // If not won, just send wrong answer to the submitter
-    socket.emit('result', 'Wrong Answer');
+  // Calculate new ELOs
+  const [newWinnerElo, newLoserElo] = updateElo(myElo, opponentElo);
+
+  // Calculate new stats
+  const newWinnerWins = (myData.wins || 0) + 1;
+  const newWinnerMatches = (myData.totalMatches || 0) + 1;
+
+  const newLoserWins = opponentData.wins || 0;
+  const newLoserMatches = (opponentData.totalMatches || 0) + 1;
+
+  // Update Firestore for winner
+  await myDocRef.update({
+    elo: newWinnerElo,
+    wins: newWinnerWins,
+    totalMatches: newWinnerMatches
+  });
+
+  // Update Firestore for loser
+  await opponentDocRef.update({
+    elo: newLoserElo,
+    wins: newLoserWins,
+    totalMatches: newLoserMatches
+  });
+
+  // Send result and ELO to both clients
+  socket.emit('result', 'You won!');
+  socket.emit('eloUpdate', { elo: newWinnerElo, change: newWinnerElo - myElo });
+
+  if (opponentSocketId) {
+    io.to(opponentSocketId).emit('result', 'Opponent AC - You lose');
+    io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
   }
+} else if (myUserId && opponentUserId) {
+  const myDocRef = db.collection("users").doc(myUserId);
+  const myDoc = await myDocRef.get();
+  const myData = myDoc.data();
+
+  const newTotalMatches = (myData.totalMatches || 0) + 1;
+
+  await myDocRef.update({
+    totalMatches: newTotalMatches
+  });
+
+  socket.emit('result', 'Wrong Answer');
+}
 });
 
 
