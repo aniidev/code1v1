@@ -274,7 +274,6 @@ function parseInputValue(value, type) {
   }
 }
 
-
 function generateTestHarness(lang, funcName, testCases, inputTypes, returnType) {
   const argNames = Object.keys(inputTypes);
 
@@ -306,6 +305,8 @@ function generateTestHarness(lang, funcName, testCases, inputTypes, returnType) 
     harness += `        print(f"Case {idx}: ERROR | {str(e)}")\n`;
     return harness;
   }
+  
+  // --- JAVASCRIPT ---
   if (lang === 'javascript') {
     let harness = '\n// === Test Harness ===\n';
     harness += 'const testCases = [\n';
@@ -329,96 +330,114 @@ testCases.forEach(({ inputs, expected }, idx) => {
 `;
     return harness;
   }
+  
   // --- JAVA ---
   if (lang === 'java') {
-  let importLine = '';
-  if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
-    importLine = 'import java.util.*;';
-  }
-  let harness = `
-${importLine}
-public class Solution {
-    // user code above
-    public static void main(String[] args) {
-  `;
-  testCases.forEach((tc, idx) => {
-    const inputs = parseInputs(tc.input);
-    const formatted = inputs.map((v,i) =>
-      formatArg(parseInputValue(v, inputTypes[argNames[i]]),
-                inputTypes[argNames[i]], lang));
-    const expected = formatArg(parseInputValue(tc.expectedOutput, returnType),
-                               returnType, lang);
-    harness += `
+    // Fix: Ensure the Java harness contains the complete class structure
+    let importLine = '';
+    if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
+      importLine = 'import java.util.*;';
+    }
+    
+    // Start with import and class definition
+    let harness = `\n${importLine}\n// === Test Harness ===\n`;
+    
+    // Add test cases as class methods
+    harness += `    public static void runTests() {\n`;
+    testCases.forEach((tc, idx) => {
+      const inputs = parseInputs(tc.input);
+      const formatted = inputs.map((v, i) =>
+        formatArg(parseInputValue(v, inputTypes[argNames[i]]),
+                 inputTypes[argNames[i]], lang));
+      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType),
+                                returnType, lang);
+      
+      harness += `
         try {
-            Object result = new Solution().${funcName}(${formatted.join(', ')});
-            if (result.equals(${expected})) {
-                System.out.println("Case ${idx+1}: PASS | Expected: ${tc.expectedOutput} | Output: " + result);
-            } else {
-                System.out.println("Case ${idx+1}: FAIL | Expected: ${tc.expectedOutput} | Output: " + result);
-            }
+            Object result = ${funcName}(${formatted.join(', ')});
+            boolean passed = `;
+      
+      // Handle comparison based on return type
+      if (returnType === 'bool' || returnType === 'boolean') {
+        harness += `result.equals(${expected})`;
+      } else if (returnType === 'int' || returnType === 'number') {
+        harness += `result.equals(${expected})`;
+      } else if (returnType.includes('List') || returnType.includes('[]')) {
+        harness += `result.toString().equals(${expected}.toString())`;
+      } else {
+        harness += `result.equals(${expected})`;
+      }
+      
+      harness += `; 
+            System.out.println("Case ${idx+1}: " + (passed ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + result);
         } catch (Exception e) {
             System.err.println("Case ${idx+1}: ERROR | " + e.getMessage());
         }
     `;
-  });
-  harness += `
-    }
-}
-`;
-  return harness;
-}
+    });
+    harness += `    }\n`;
+    
+    // Add main method
+    harness += `
+    public static void main(String[] args) {
+        runTests();
+    }`;
+    
+    return harness;
+  }
 
   // --- C++ ---
   if (lang === 'cpp') {
-  let harness = `
-#include <iostream>
-#include <vector>
-#include <string>
-using namespace std;
-// user code above
-int main() {
-`;
-  testCases.forEach((tc, idx) => {
-    const inputs = parseInputs(tc.input);
-    const formatted = inputs.map((v,i) =>
-      formatArg(parseInputValue(v, inputTypes[argNames[i]]),
-                inputTypes[argNames[i]], lang));
-    const expected = formatArg(parseInputValue(tc.expectedOutput, returnType),
-                               returnType, lang);
-    // declare each vector arg if needed
-    let decls = '';
-    inputs.forEach((v,i) => {
-      const t = inputTypes[argNames[i]];
-      if (/\bvector\b|\[\]/.test(t)) {
-        const elemType = typeof parseInputValue(v, t)[0] === 'number' ? 'int' : 'string';
-        decls += `    vector<${elemType}> ${argNames[i]} = ${formatted[i]};\n`;
-      }
-    });
-    const argsList = inputs.map((_,i) =>
-      /\bvector\b|\[\]/.test(inputTypes[argNames[i]]) ? argNames[i] : formatted[i]
-    ).join(', ');
-    harness += `
-${decls}
+    let harness = `\n// === Test Harness ===\n`;
+    
+    // Add function to run all tests
+    harness += `void runTests() {\n`;
+    testCases.forEach((tc, idx) => {
+      const inputs = parseInputs(tc.input);
+      const formatted = inputs.map((v, i) =>
+        formatArg(parseInputValue(v, inputTypes[argNames[i]]),
+                  inputTypes[argNames[i]], lang));
+      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType),
+                                returnType, lang);
+      
+      // Handle vector arguments declarations
+      let decls = '';
+      inputs.forEach((v, i) => {
+        const t = inputTypes[argNames[i]];
+        if (/\bvector\b|\[\]/.test(t)) {
+          const elemType = typeof parseInputValue(v, t)[0] === 'number' ? 'int' : 'string';
+          decls += `    vector<${elemType}> ${argNames[i]} = ${formatted[i]};\n`;
+        }
+      });
+      
+      const argsList = inputs.map((_, i) =>
+        /\bvector\b|\[\]/.test(inputTypes[argNames[i]]) ? argNames[i] : formatted[i]
+      ).join(', ');
+      
+      harness += `
+    ${decls}
     try {
-      auto result = ${funcName}(${argsList});
-      cout << "Case ${idx+1}: " << (result == ${expected} ? "PASS" : "FAIL")
-           << " | Expected: ${tc.expectedOutput} | Output: " << result << endl;
+        auto result = ${funcName}(${argsList});
+        cout << "Case ${idx+1}: " << (result == ${expected} ? "PASS" : "FAIL")
+             << " | Expected: ${tc.expectedOutput} | Output: " << result << endl;
     } catch (const exception& e) {
-      cerr << "Case ${idx+1}: ERROR | " << e.what() << endl;
+        cerr << "Case ${idx+1}: ERROR | " << e.what() << endl;
     }
 `;
-  });
-  harness += `
+    });
+    harness += `}\n\n`;
+    
+    // Add main function
+    harness += `int main() {
+    runTests();
     return 0;
-}
-`;
-  return harness;
-}
-
+}\n`;
+    
+    return harness;
+  }
 
   return '';
 }
-
 
 async function runCode() {
   const code = editor.getValue();
@@ -436,7 +455,34 @@ async function runCode() {
     const returnType = currentQuestion.output || '';
 
     // Generate code with test harness
-    let fullCode = code + generateTestHarness(lang, funcName, testCases, inputTypes, returnType);
+    let fullCode;
+    
+    // Fix for Java: Wrap in a Solution class
+    if (lang === 'java') {
+      // Import statements if needed
+      let imports = '';
+      if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
+        imports = 'import java.util.*;\n';
+      }
+      
+      fullCode = `${imports}
+public class Solution {
+    ${code}
+${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}
+}`;
+    } else if (lang === 'cpp') {
+      // Include necessary headers
+      fullCode = `#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+
+${code}
+${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
+    } else {
+      // Python and JavaScript require no special wrapping
+      fullCode = code + generateTestHarness(lang, funcName, testCases, inputTypes, returnType);
+    }
 
     const pistonURL = "https://emkc.org/api/v2/piston/execute";
     const fileExtensions = {
@@ -445,9 +491,10 @@ async function runCode() {
       "java": "java",
       "cpp": "cpp"
     };
+    
     const fileName = lang === 'java'
-  ? 'Solution.java'
-  : `main.${fileExtensions[lang]}`;
+      ? 'Solution.java'
+      : `main.${fileExtensions[lang]}`;
 
     const requestData = {
       language: lang,
@@ -494,12 +541,11 @@ async function runCode() {
         outputHTML += `${details}</div>`;
         if (result === 'PASS') passed++;
       }
-      
     });
+    
     if (stderrText) {
-  outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
-}
-
+      outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
+    }
 
     // Final status summary
     const allPassed = passed === testCases.length;
@@ -508,9 +554,6 @@ async function runCode() {
                  `${allPassed ? ' 🎉' : ''}</div>` + statusHTML;
 
     document.getElementById('status').innerHTML = statusHTML;
-    if (stderrText) {
-      outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
-    }
     document.getElementById('output').innerHTML = outputHTML || "<pre>No output</pre>";
 
     won = allPassed;
@@ -539,7 +582,7 @@ function setLanguage() {
   const funcName = currentQuestion.functionName || 'functionName';
   const inputs = currentQuestion.inputs?.[lang] || {};
   const returnType = currentQuestion.output || '';
-   const rawReturn = currentQuestion.output || '';
+  const rawReturn = currentQuestion.output || '';
   let returnTypeForJava = rawReturn;
   if (lang === 'java' && (rawReturn === 'bool' || rawReturn === 'boolean')) {
     returnTypeForJava = 'boolean';
@@ -592,115 +635,11 @@ function setLanguage() {
   editor.setValue(fullTemplate);
 }
 
-
-function wrapJavaMethod(methodCode, funcName, args, inputTypes, returnType) {
-  // only import java.util if we need Lists
-  const importLine = Object.values(inputTypes).some(t => /\bList\b/.test(t))
-    ? 'import java.util.*;'
-    : '';
-
-  // build the argument list for the call in main()
-  const argNames = Object.keys(inputTypes);
-  const argList = args.map((val, i) =>
-    formatArg(val, inputTypes[argNames[i]], 'java')
-  ).join(', ');
-
-  // decide whether to call statically or via instance
-  const callExpr = methodCode.includes(' static ')
-    ? `Solution.${funcName}(${argList})`
-    : `new Solution().${funcName}(${argList})`;
-
-  return `
-${importLine}
-public class Solution {
-${methodCode}
-
-  public static void main(String[] args) {
-    try {
-      Object result = ${callExpr};
-      System.out.println(result);
-    } catch (Exception e) {
-      System.err.println("ERROR: " + e.getMessage());
-    }
-  }
-}
-`.trim();
-}
-
-// Generates the invocation code for each language
-function generateInvocationCode(lang, funcName, args, returnType) {
-  if (lang === 'python') {
-    return `print(${funcName}(${args.join(', ')}))`;
-  } else if (lang === 'javascript') {
-    return `console.log(${funcName}(${args.join(', ')}));`;
-  } else if (lang === 'java') {
-    // For Java, we need a main method to run the function
-    const argsList = args.map((a, i) => {
-      // For arrays, convert JSON to array
-      if (Array.isArray(a)) {
-        return `new int[]{${a.join(',')}}`;
-      }
-      if (typeof a === 'string') return `"${a}"`;
-      return a;
-    }).join(', ');
-    return `
-public static void main(String[] args) {
-  Solution sol = new Solution();
-  System.out.println(java.util.Arrays.toString(sol.${funcName}(${argsList})));
-}
-`;
-  } else if (lang === 'cpp') {
-    // For C++, assumes function is in global scope
-    return `
-int main() {
-  auto result = ${funcName}(${args.join(', ')});
-  // Print logic depends on return type
-  return 0;
-}
-`;
-  }
-  return '';
-}
-
-// Utility: Escape string for code (handles quotes and backslashes)
+// Utility functions
 function escapeString(str) {
   return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'");
 }
 
-// Utility: Detect if type is array/list
 function isArrayType(type) {
   return /\[\]|\bList\b|\bvector\b/.test(type);
 }
-
-
-
-
-// Wrap C++ code with main for invocation
-function wrapCppMethod(methodCode, funcName, args, inputTypes, returnType) {
-  const argList = Object.entries(inputTypes).map(
-    ([name, type], idx) => formatArg(args[idx], type, 'cpp')
-  ).join(', ');
-  let printStatement = '';
-  if (Object.values(inputTypes).some(type => /\bvector\b/.test(type))) {
-    // If the function expects a vector, we must declare it first
-    let vectorName = 'wordList';
-    let vectorInit = `vector<string> ${vectorName} = ${argList};`;
-    printStatement = `${vectorInit}\n    cout << ${funcName}("hit", "cog", ${vectorName}) << endl;`;
-  } else {
-    printStatement = `cout << ${funcName}(${argList}) << endl;`;
-  }
-  return `
-#include <iostream>
-#include <vector>
-#include <string>
-using namespace std;
-
-${methodCode}
-
-int main() {
-    ${printStatement}
-    return 0;
-}
-`.trim();
-}
-

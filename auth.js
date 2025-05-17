@@ -13,6 +13,9 @@ export async function register(email, password, username) {
     elo: 1000,
     wins: 0
   });
+  
+  login(username, email);
+  window.href = index.html;
 }
 
 export async function login(email, password) {
@@ -26,8 +29,8 @@ export async function login(email, password) {
 }
 window.logout = async function() {
   await signOut(auth);
+  window.location.reload();
   localStorage.removeItem("userData");
-  window.location.href = "login.html"; 
 };
 async function fetchLeaderboard() {
   const usersRef = collection(db, "users");

@@ -58,14 +58,16 @@ function updateYourStats(users, currentUid) {
   const yourMatchesElem = document.getElementById('your-matches');
   const idx = users.findIndex(u => u.uid === currentUid);
   if (idx !== -1) {
-    const user = users[idx];
-    yourRankElem.textContent = `#${idx + 1}`;
+     const user = users[idx];
+    const rank = idx + 1;
+    const topPercent = calculateTopPercent(rank, users.length);
+    yourRankElem.innerHTML = `#${rank} <span class="top-percent">${topPercent}</span>`;
     yourEloElem.textContent = user.elo ?? "--";
     yourWinsElem.textContent = user.wins ?? "0";
     yourMatchesElem.textContent = user.totalMatches ?? "0";
   } else {
-    yourRankElem.textContent = "--";
-    yourEloElem.textContent = "--";
+    yourRankElem.textContent = "Not Signed In";
+    yourEloElem.textContent = "Not Signed In";
     yourWinsElem.textContent = "--";
     yourMatchesElem.textContent = "--";
   }
@@ -77,3 +79,8 @@ onAuthStateChanged(auth, async (user) => {
   renderLeaderboard(users, user?.uid);
   updateYourStats(users, user?.uid);
 });
+
+function calculateTopPercent(rank, totalUsers) {
+  if (!rank || !totalUsers) return "";
+  return `Top ${(rank / totalUsers * 100).toFixed(2)}%`;
+}
