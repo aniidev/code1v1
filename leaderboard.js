@@ -66,8 +66,8 @@ function updateYourStats(users, currentUid) {
     yourWinsElem.textContent = user.wins ?? "0";
     yourMatchesElem.textContent = user.totalMatches ?? "0";
   } else {
-    yourRankElem.textContent = "Not Signed In";
-    yourEloElem.textContent = "Not Signed In";
+    yourRankElem.textContent = "--";
+    yourEloElem.textContent = "--";
     yourWinsElem.textContent = "--";
     yourMatchesElem.textContent = "--";
   }

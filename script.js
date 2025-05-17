@@ -454,33 +454,36 @@ async function runCode() {
     const funcName = currentQuestion.functionName;
     const returnType = currentQuestion.output || '';
 
-    // Generate code with test harness
     let fullCode;
     
-    // Fix for Java: Wrap in a Solution class
     if (lang === 'java') {
-      // Import statements if needed
-      let imports = '';
-      if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
-        imports = 'import java.util.*;\n';
-      }
-      
-      fullCode = `${imports}
+  let imports = 'import java.util.*;\n';
+  imports += 'import java.math.*;\n';   
+  
+  fullCode = `${imports}
 public class Solution {
     ${code}
 ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}
 }`;
-    } else if (lang === 'cpp') {
-      // Include necessary headers
-      fullCode = `#include <iostream>
+} else if (lang === 'cpp') {
+  fullCode = `#include <iostream>
 #include <vector>
 #include <string>
+#include <stack>
+#include <queue>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <numeric>
 using namespace std;
 
 ${code}
 ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
-    } else {
-      // Python and JavaScript require no special wrapping
+} else {
       fullCode = code + generateTestHarness(lang, funcName, testCases, inputTypes, returnType);
     }
 
