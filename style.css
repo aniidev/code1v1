@@ -445,3 +445,47 @@ select {
   background: #1a1a1a00;
 }
  
+#google-signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #fff;
+  color: #222;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 50px;
+  padding: 12px 28px;
+  box-shadow: 0 4px 20px rgba(22, 246, 107, 0.08), 0 2px 8px rgba(0,0,0,0.10);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  margin: 16px 0;
+  position: relative;
+  z-index: 1;
+}
+
+#google-signin:hover {
+  background: #f2f2f2;
+  box-shadow: 0 6px 24px rgba(22, 246, 107, 0.15), 0 4px 16px rgba(0,0,0,0.12);
+  transform: translateY(-2px) scale(1.03);
+}
+
+#google-signin .google-icon {
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  background: none;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: middle;
+  box-shadow: none;
+  border: none;
+  object-fit: contain;
+  filter: none;
+  transition: filter 0.2s;
+}
+
+#google-signin:active {
+  transform: scale(0.98);
+}

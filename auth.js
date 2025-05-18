@@ -2,6 +2,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "http
 import { doc, setDoc, getDoc, collection, query, orderBy, getDocs } from "https://esm.sh/firebase/firestore";
 import { auth, db } from "./firebase.js";
 import { signOut } from "https://esm.sh/firebase/auth";
+import { GoogleAuthProvider, signInWithPopup } from "https://esm.sh/firebase/auth";
 
 export async function register(email, password, username) {
   try {
@@ -98,3 +99,68 @@ export function getCurrentUser() {
 
 // Export the logout function to make it available through import
 window.logout = logout;
+
+
+export async function loginWithGoogle() {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    const userDocRef = doc(db, "users", user.uid);
+    let userDoc = await getDoc(userDocRef);
+
+    const userData = {
+      uid: user.uid,
+      ...userDoc.data()
+    };
+
+    // Save to localStorage
+    localStorage.setItem("userData", JSON.stringify(userData));
+
+    // Redirect to homepage
+    window.location.href = "index.html";
+
+    return userData;
+  } catch (error) {
+    console.error("Google login error:", error);
+    throw error;
+  }
+}
+
+export async function signUpWithGoogle() {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Check if user document exists
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    // Create new user document if it doesn't exist
+    if (!userDoc.exists()) {
+      await setDoc(userDocRef, {
+        username: user.displayName || "Anonymous",
+        email: user.email,
+        elo: 1000,
+        wins: 0
+      });
+    }
+
+    // Get created/updated user data
+    const updatedUserDoc = await getDoc(userDocRef);
+    const userData = {
+      uid: user.uid,
+      ...updatedUserDoc.data()
+    };
+
+    localStorage.setItem("userData", JSON.stringify(userData));
+    window.location.href = "index.html";
+    return userData;
+
+  } catch (error) {
+    console.error("Google sign-up error:", error);
+    throw error;
+  }
+}

@@ -3,35 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up</title>
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="script.js"></script>
+  <title>Sign Up | Your App</title>
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="signup.css">
 </head>
 <body>
-  <div class="container">
-    <h2>Sign Up</h2>
-    <form action="#" method="post">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required placeholder="Enter your username">
+  <div class="signup-container">
+    <div class="signup-card">
+      <div class="signup-header">
+        <div class="logo"></div>
+        <h2>Create Account</h2>
+        <p class="subtitle">Sign up to get started</p>
       </div>
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required placeholder="Enter your email">
+      
+      <button id="google-signup">
+  <img src="google.png" alt="Google logo" class="google-icon">
+  Sign up with Google
+</button>
+<div class="divider"><span>or</span></div>
+      <form id="signupForm" autocomplete="on">
+        <div class="input-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required placeholder="Enter your username" autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="Enter your email" autocomplete="email">
+        </div>
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required placeholder="Enter your password" autocomplete="new-password">
+        </div>
+        <div class="input-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input type="password" id="confirmPassword" name="confirm-password" required placeholder="Confirm your password" autocomplete="new-password">
+        </div>
+        <button type="submit" id="registerBtn" class="signup-btn">Sign Up</button>
+        <div id="status"></div>
+      </form>
+      
+      <div class="login-link">
+        Already have an account? <a href="login.html">Log in</a>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required placeholder="Enter your password">
-      </div>
-      <div class="form-group">
-        <label for="confirm-password">Confirm Password</label>
-        <input type="password" id="confirmPassword" name="confirm-password" required placeholder="Confirm your password">
-      </div>
-      <button type="submit" id="registerBtn">Sign Up</button>
-    </form>
+    
+    </div>
   </div>
-  <p id="status"></p>
- <button onclick="location.href='index.html'">Return</button>
   <script type="module" src="signup.js"></script>
 </body>
 </html>

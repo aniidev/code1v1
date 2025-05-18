@@ -1,4 +1,4 @@
-import { register } from "./auth.js";
+import { register, signUpWithGoogle } from "./auth.js";
 
 document.querySelector("form").addEventListener("submit", async (event) => {
   event.preventDefault(); // This stops the form from submitting via POST
@@ -33,5 +33,13 @@ document.querySelector("form").addEventListener("submit", async (event) => {
     
   } catch (e) {
     document.getElementById('status').innerHTML = "Registration failed: " + e.message;
+  }
+});
+
+document.getElementById("google-signup").addEventListener("click", async () => {
+  try {
+    await signUpWithGoogle();
+  } catch (e) {
+    document.getElementById('status').innerHTML = "Google sign-up failed: " + e.message;
   }
 });

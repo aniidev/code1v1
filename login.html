@@ -2,28 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
-  <link rel="stylesheet" href="style.css">
-    
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="login.css">
+  <script src="login.js" type="module"></script>
 </head>
 <body>
-  <div class="container">
-    <h2>Login</h2>
-    <form action="#" method="post">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="text" id="loginEmail" name="email" required placeholder="Enter your email">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo"></div>
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Sign in to your account</p>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
+      <form id="loginForm" autocomplete="on">
+        <div class="input-group">
+          <label for="loginEmail">Email</label>
+          <input 
+            type="email" 
+            id="loginEmail" 
+            name="email" 
+            placeholder="you@example.com" 
+            autocomplete="username"
+            required>
+        </div>
+        <div class="input-group">
+          <label for="loginPassword">Password</label>
+          <input 
+            type="password" 
+            id="loginPassword" 
+            name="password" 
+            placeholder="Your password" 
+            autocomplete="current-password"
+            required>
+        </div>
+        <button type="submit" id="loginBtn" class="login-btn">Sign In</button>
+        <div id="status"></div>
+      </form>
+      <div class="divider"><span>or</span></div>
+      <button id="google-signin" type="button">
+        <img src="google.png" alt="Google logo" class="google-icon">
+        Sign in with Google
+      </button>
+      <div class="signup-link">
+        Don't have an account? <a href="signup.html">Sign up</a>
       </div>
-      <button type="submit" id="loginBtn">Login</button>
-    </form>
+     
+    </div>
+    
   </div>
-  <p id="status"></p>
-   <button onclick="location.href='index.html'">Return</button>
-  <script type="module" src="login.js"></script>
 </body>
 </html>
