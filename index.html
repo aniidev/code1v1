@@ -53,7 +53,8 @@
     <p>Opponent found</p>
   </div>      
   <!-- VS Screen -->   
-  <div id="vsScreen" class="container">     
+  <div id="vsScreen" class="container">    
+    <div class="logo"></div> 
     <h2>CODING 1V1</h2>     
     <div class="vs-row">       
       <div>         
@@ -76,19 +77,37 @@
   
   <!-- Game Area -->   
   <div id="game">     
-    <div class="game-container">       
-      <div class="timer-status">         
-        <div>Time remaining: <span id="timer">15:00</span></div>          
-        <div class="controls">           
-          <label for="languageSelect">Language:</label>           
-          <select id="languageSelect" onchange="setLanguage()">             
-            <option value="javascript">JavaScript</option>             
-            <option value="python">Python</option>             
-            <option value="cpp">C++</option>             
-            <option value="java">Java</option>           
-          </select>         
-        </div>       
-      </div>              
+    
+    <div class="game-container">  
+      
+      <div class="timer-status">
+  <div class="left-section">
+    <div class="opponent-status">
+      <div id="opponentCases">0/0 Testcases: <span id="opponentDisplay"></span></div>
+    </div>
+  </div>
+
+  <div class="center-section">
+    <div><span id="timer">15:00</span></div>
+    <div class="controls">
+      <label for="languageSelect">Language:</label>
+      <select id="languageSelect" onchange="setLanguage()" style="justify-content: right;">
+        <option value="javascript">JavaScript</option>
+        <option value="python">Python</option>
+        <option value="cpp">C++</option>
+        <option value="java">Java</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="right-section">
+    <div class="player-status">
+      <div id="userCases"><span id="userDisplay"></span>: 0/0 Testcases</div>
+    </div>
+  </div>
+</div>
+    
+    
       
       <div class="game-content">         
         <div class="problem-panel">           
@@ -100,7 +119,7 @@
         
           </div>         
         </div>         
-        <div class="editor-panel">           
+        <div class="editor-panel">       
           <div id="editor"></div>           
           <div class="controls">             
             <button onclick="runCode()" class="button">Run Code</button>             

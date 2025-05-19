@@ -5,12 +5,13 @@ let editor = null;
 let currentQuestion = null;
 let gameTimerInterval = null;
 let won = false;
+let username = "Player";
+let opponentName = "Opponent";
 const userData = JSON.parse(localStorage.getItem("userData"));
 
 if (userData) {
   document.getElementById("welcomeText").textContent =
     `Welcome, ${userData.username}! ELO: ${userData.elo}`;
-
 }
 
 
@@ -19,6 +20,8 @@ socket.on('playerInfo', ({ self, opponent, selfElo, opponentElo }) => {
   document.getElementById("opponent").textContent = opponent;
   document.getElementById("userElo").textContent = `rating: ${selfElo}`;
   document.getElementById("opponentElo").textContent = `rating: ${opponentElo}`;
+  opponentName = opponent;
+  username = self;
 });
 
 socket.on('registerUser', async ({ userId }) => {
@@ -50,21 +53,35 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function createRoom() {
-  room = Math.random().toString(36).substring(2, 5).toUpperCase();
-  socket.emit('joinRoom', room);
-  document.getElementById('lobby').style.display = 'none';
-  document.getElementById('waitingScreen').style.display = 'block';
-  document.getElementById('waitingRoomCode').innerText = room;
+  if(userData)
+  {
+    room = Math.random().toString(36).substring(2, 5).toUpperCase();
+    socket.emit('joinRoom', room);
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('waitingScreen').style.display = 'block';
+    document.getElementById('waitingRoomCode').innerText = room;
+  }
+  else
+  {
+    window.location.href = 'login.html';
+  }
 }
 
 function joinRoom() {
-  room = document.getElementById('roomInput').value.toUpperCase().trim();
-  if (room.length !== 3) {
-    alert('Room code must be 3 characters!');
-    return;
+  if(userData)
+  {
+    room = document.getElementById('roomInput').value.toUpperCase().trim();
+    if (room.length !== 3) {
+      alert('Room code must be 3 characters!');
+      return;
+    }
+    socket.emit('joinRoom', room);
+    document.getElementById('lobby').style.display = 'none';
   }
-  socket.emit('joinRoom', room);
-  document.getElementById('lobby').style.display = 'none';
+  else
+  {
+    window.location.href = 'login.html';
+  }
 }
 
 
@@ -74,7 +91,8 @@ socket.on('startGame', (question) => {
   document.getElementById('publicWaiting').style.display = 'none';
   document.getElementById('header').style.display = 'none';
   document.getElementById('vsScreen').style.display = 'block';
-
+  document.getElementById('userDisplay').innerHTML = username;
+  document.getElementById('opponentDisplay').innerHTML = opponentName;
   let timeLeft = 5;
   document.getElementById('vsTimer').innerText = `0:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
   const vsInterval = setInterval(() => {
@@ -158,15 +176,23 @@ socket.on('eloUpdate', ({ elo, change }) => {
 });
 
 function findPublicMatch() {
-  socket.emit('publicMatch');
-  document.getElementById('lobby').style.display = 'none';
-  document.getElementById('lobby').style.display = 'none';
-  document.getElementById('publicWaiting').style.display = 'block';
+  if(userData)
+  {
+    socket.emit('publicMatch');
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('publicWaiting').style.display = 'block';
+  }
+  else
+  {
+    window.location.href = 'login.html';
+  }
 }
 
 socket.on('waitingForOpponent', () => {
   document.getElementById('publicWaiting').innerText = 'Finding an opponent...';
 });
+
 
 function returnLobby()
 {
@@ -222,26 +248,39 @@ function normalizeOutput(output, expectedType) {
 // Generate argument list for function call in each language
 function formatArg(val, type, lang) {
   const isList = /\[\]|\bList\b|\bvector\b/.test(type);
-  // detect element type for vectors/lists
+  const isPrimitive = typeof val[0] === 'number' || typeof val[0] === 'boolean';
+
   if (isList) {
     let elems = val.map(v => {
       if (typeof v === 'string') return `"${v}"`;
-      return v; // number or boolean literal
+      return v;
     }).join(', ');
+
     if (lang === 'python' || lang === 'javascript') {
       return `[${elems}]`;
     }
+
     if (lang === 'java') {
-      // infer generic type
-      const generic = typeof val[0] === 'number' ? 'Integer' : 'String';
-      return `Arrays.asList(${elems})`;
+      if (/\[\]$/.test(type)) {
+        // For primitive arrays
+        if (typeof val[0] === 'number') return `new int[]{${elems}}`;
+        if (typeof val[0] === 'string') return `new String[]{${elems}}`;
+        if (typeof val[0] === 'boolean') return `new boolean[]{${elems}}`;
+      } else {
+        // For List<T>
+        const generic = typeof val[0] === 'number' ? 'Integer' : typeof val[0] === 'boolean' ? 'Boolean' : 'String';
+        return `Arrays.asList(${elems})`;
+      }
     }
-    if (lang === 'cpp') {
-      // infer <T>
-      const T = typeof val[0] === 'number' ? 'int' : 'string';
-      return `{${elems}}`;  // vector<T> init-list
+ if (lang === 'cpp') {
+      const T = typeof val[0] === 'number' ? 'int' :
+                typeof val[0] === 'boolean' ? 'bool' : 'string';
+      return `std::vector<${T}> vec${index} = {${elems}};`;
     }
-  }
+}
+
+
+  // Single values
   if (typeof val === 'string') return `"${val.replace(/"/g, '\\"')}"`;
   if (typeof val === 'boolean') return lang === 'python' ? (val ? 'True' : 'False') : (val ? 'true' : 'false');
   return val;

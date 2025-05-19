@@ -224,23 +224,58 @@ socket.on('submitCode', async ({ code, won }) => {
 
 
   // DISCONNECT CLEANUP
-  socket.on('disconnect', () => {
-    const room = socket.room;
-    console.log(`Client disconnected: ${socket.id}`);
+  socket.on('disconnect', async () => {
+  const room = socket.room;
+  console.log(`Client disconnected: ${socket.id}`);
 
-    if (room && rooms[room]) {
-      rooms[room] = rooms[room].filter(id => id !== socket.id);
-      if (rooms[room].length === 0) {
-        delete rooms[room];
-      } else {
-        const opponentId = rooms[room][0];
-        io.to(opponentId).emit('opponentLeft');
+  // Remove from public match queue if in it
+  queue = queue.filter(s => s.id !== socket.id);
+
+  if (room && rooms[room]) {
+    const opponentId = rooms[room].find(id => id !== socket.id);
+    const opponentSocket = io.sockets.sockets.get(opponentId);
+
+    // Handle ELO as if opponent won
+    if (opponentSocket && socket.userId && opponentSocket.userId) {
+      const myDocRef = db.collection("users").doc(socket.userId);
+      const opponentDocRef = db.collection("users").doc(opponentSocket.userId);
+
+      const myDoc = await myDocRef.get();
+      const opponentDoc = await opponentDocRef.get();
+
+      if (myDoc.exists && opponentDoc.exists) {
+        const myData = myDoc.data();
+        const opponentData = opponentDoc.data();
+
+        const [newWinnerElo, newLoserElo] = updateElo(opponentData.elo, myData.elo);
+
+        await opponentDocRef.update({
+          elo: newWinnerElo,
+          wins: (opponentData.wins || 0) + 1,
+          totalMatches: (opponentData.totalMatches || 0) + 1
+        });
+
+        await myDocRef.update({
+          elo: newLoserElo,
+          wins: myData.wins || 0,
+          totalMatches: (myData.totalMatches || 0) + 1
+        });
+
+        opponentSocket.emit('result', 'Opponent disconnected - You win!');
+        opponentSocket.emit('eloUpdate', {
+          elo: newWinnerElo,
+          change: newWinnerElo - opponentData.elo
+        });
       }
     }
 
-    // Also remove from queue if they disconnect during publicMatch
-    queue = queue.filter(s => s.id !== socket.id);
-  });
+    // Clean up room
+    delete rooms[room];
+    if (opponentId) {
+      io.to(opponentId).emit('opponentLeft');
+    }
+  }
+});
 });
 
 server.listen(3000, () => {

@@ -24,8 +24,8 @@
         "expectedOutput": "-21"
       },
       {
-        "input": "1534236469",
-        "expectedOutput": "9646324351"
+        "input": "1534236",
+        "expectedOutput": "6324351"
       },
       {
         "input": "0",
@@ -36,12 +36,12 @@
         "expectedOutput": "1"
       },
       {
-        "input": "-2147483648",
-        "expectedOutput": "-8463847412"
+        "input": "-483648",
+        "expectedOutput": "-846384"
       },
       {
-        "input": "2147483647",
-        "expectedOutput": "7463847412"
+        "input": "214748",
+        "expectedOutput": "847412"
       }
     ],
     "functionName": "reverse",
@@ -192,6 +192,105 @@
     }
   },
   "output": "bool"
+},
+{
+  "id": 7,
+  "title": "Single Number",
+  "difficulty": "Easy",
+  "description": "Given a non-empty array of integers nums, every element appears twice except for one. Find that single one.",
+  "examples": [
+    {
+      "input": "nums = [2,2,1]",
+      "output": "1"
+    },
+    {
+      "input": "nums = [4,1,2,1,2]",
+      "output": "4"
+    }
+  ],
+  "testCases": [
+    {
+      "input": "[2,2,1]",
+      "expectedOutput": "1"
+    },
+    {
+      "input": "[4,1,2,1,2]",
+      "expectedOutput": "4"
+    },
+    {
+      "input": "[1]",
+      "expectedOutput": "1"
+    },
+    {
+      "input": "[0,0,7]",
+      "expectedOutput": "7"
+    }
+  ],
+  "functionName": "singleNumber",
+  "inputs": {
+    "python": {
+      "nums": "List[int]"
+    },
+    "cpp": {
+      "nums": "vector<int>&"
+    },
+    "java": {
+      "nums": "int[]"
+    },
+    "javascript": {
+      "nums": "number[]"
+    }
+  },
+  "output": "int"
+},
+{
+    "id": 9,
+  "title": "First Unique Character in a String",
+  "difficulty": "Easy",
+  "description": "Given a string s, find the first non-repeating character in it and return its index. If it does not exist, return -1.",
+  "examples": [
+    {
+      "input": "s = 'leetcode'",
+      "output": "0"
+    },
+    {
+      "input": "s = 'loveleetcode'",
+      "output": "2"
+    }
+  ],
+  "testCases": [
+    {
+      "input": "'leetcode'",
+      "expectedOutput": "0"
+    },
+    {
+      "input": "'loveleetcode'",
+      "expectedOutput": "2"
+    },
+    {
+      "input": "'aabb'",
+      "expectedOutput": "-1"
+    },
+    {
+      "input": "'z'",
+      "expectedOutput": "0"
+    }
+  ],
+  "functionName": "firstUniqChar",
+  "inputs": {
+    "python": {
+      "s": "str"
+    },
+    "cpp": {
+      "s": "string"
+    },
+    "java": {
+      "s": "String"
+    },
+    "javascript": {
+      "s": "string"
+    }
+  },
+  "output": "int"
 }
-
 ]
