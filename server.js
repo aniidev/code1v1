@@ -62,6 +62,13 @@ socket.on('joinRoom', async incomingRoom => {
   // Get both sockets
   const player1Socket = io.sockets.sockets.get(rooms[room][0]);
   const player2Socket = io.sockets.sockets.get(rooms[room][1]);
+  
+  if (player1Socket.userId === player2Socket.userId) {
+    socket.emit('invalidRoom', 'You cannot play against yourself.');
+    player2Socket.leave(room);
+    rooms[room].pop();
+    return;
+  }
 
   // Helper to get username and elo
   const getUserInfo = async (sock) => {
@@ -105,6 +112,12 @@ socket.on('joinRoom', async incomingRoom => {
   if (queue.length >= 2) {
     const player1 = queue.shift();
     const player2 = queue.shift();
+    
+    if (player1.userId === player2.userId) {
+      player2.emit('waitingForOpponent');
+      queue.unshift(player2);
+      return;
+    }
 
     const roomCode = Math.random().toString(36).substring(2, 5).toUpperCase();
     rooms[roomCode] = [player1.id, player2.id];
