@@ -279,7 +279,7 @@ function formatArg(val, type, lang) {
  if (lang === 'cpp') {
       const T = typeof val[0] === 'number' ? 'int' :
                 typeof val[0] === 'boolean' ? 'bool' : 'string';
-      return `std::vector<${T}> vec${index} = {${elems}};`;
+      return `std::vector<${T}> vec = {${elems}};`; //vec${index} ADD THIS LATER FOR MUTLIPLE ARRAY INPUTS
     }
 }
 

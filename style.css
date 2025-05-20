@@ -37,7 +37,7 @@ body {
   right: 0;
   width: 180px;
   height: 180px;
-  background: radial-gradient(circle, rgba(22, 246, 107, 0.1) 0%, rgba(22, 246, 107, 0) 70%);
+
   z-index: 0;
 }
 
@@ -99,25 +99,42 @@ body {
 button, input, textarea {
   border: none;
   border-radius: 50px;
-  padding: 12px 24px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  padding: 12px 28px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
   position: relative;
   z-index: 1;
+  letter-spacing: 0.02em;
 }
 
 button {
-  background-color: #16f66b;
+  background: linear-gradient(90deg, #16f66b 0%, #0fd850 100%);
   color: #0a0a0a;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(22, 246, 107, 0.3);
+  box-shadow: 0 6px 18px rgba(22, 246, 107, 0.22);
+  border: 2px solid transparent;
 }
 
-button:hover {
-  background-color: #14e061;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(22, 246, 107, 0.4);
+button:hover, button:focus {
+  background: linear-gradient(90deg, #14e061 0%, #0cb450 100%);
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 8px 22px rgba(22, 246, 107, 0.35);
+  border-color: #16f66b;
+}
+
+button.secondary {
+  background: transparent;
+  color: #e4e4e4;
+  border: 0.1249rem solid #16f66b;
+  box-shadow: none;
+}
+
+button.secondary:hover, button.secondary:focus {
+  background: rgba(22, 246, 107, 0.08);
+  color: #16f66b;
+  border-color: #16f66b;
 }
 
 input, textarea {
@@ -188,41 +205,97 @@ textarea {
   color: #16f66b;
 }
 
-
 #vsScreen {
   text-align: center;
+
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(22, 246, 107, 0.12);
+  padding: 2.5rem 1.5rem 2rem 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
 }
 
 #vsScreen h2 {
-  margin-bottom: 1.5rem;
-  letter-spacing: 3px;
+  margin-bottom: 2rem;
+  letter-spacing: 4px;
+  text-shadow: 0 0 20px #16f66b55, 0 0 2px #fff;
+  font-size: 2.2rem;
+  font-weight: 800;
 }
 
 .vs-row {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 3rem;
+  gap: 5rem;
   margin: 2.5rem 0;
 }
 
 .vs-text {
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-size: 3.5rem;
+  font-weight: 900;
   color: #16f66b;
-  text-shadow: 0 0 15px rgba(22, 246, 107, 0.5);
+  text-shadow: 0 0 30px #16f66b, 0 0 10px #fff;
+  margin: 0 2rem;
 }
 
 .emoji {
-  font-size: 4rem;
-  margin-bottom: 0.5rem;
-  background: rgba(22, 246, 107, 0.1);
-  width: 100px;
-  height: 100px;
+  font-size: 4.5rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(120deg, #16f66b22 60%, #fff0 100%);
+  width: 130px;
+  height: 130px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  border: 3px solid #16f66b55;
+  box-shadow: 0 8px 24px #16f66b33;
+}
+
+#user, #opponent {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  color: #fff;
+}
+
+#userElo, #opponentElo {
+  font-size: 1rem;
+  color: #16f66b;
+  font-weight: 500;
+}
+
+.countdown {
+  margin-top: 3rem;
+  color: #e4e4e4cc;
+  font-size: 1.3rem;
+}
+
+#vsTimer {
+  font-size: 2.7rem;
+  font-weight: 800;
+  margin-top: 0.7rem;
+  color: #16f66b;
+  text-shadow: 0 0 10px #16f66b88;
+}
+
+@media (max-width: 768px) {
+  .vs-row {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .vs-text {
+    margin: 1rem 0;
+    font-size: 2.2rem;
+  }
+  .emoji {
+    width: 90px;
+    height: 90px;
+    font-size: 2.3rem;
+  }
 }
 
 .countdown {
@@ -248,17 +321,18 @@ textarea {
 
 /* New game container style */
 .game-container {
-  background-color: #151515;
-  border-radius: 16px;
-  padding: 20px;
-  margin: 1rem auto;
-  
-  width: 95%;
-  max-width: 1600px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+  border-radius: 20px;
+  padding: 32px 28px;
+  margin: 2rem auto 1.5rem auto;
+  width: 97%;
+  max-width: 1700px;
+  box-shadow: 0 12px 40px rgba(22, 246, 107, 0.11), 0 2px 24px rgba(0,0,0,0.45);
   position: relative;
   overflow: hidden;
+  min-height: 600px;
   height: calc(100vh - 100px);
+  border: 1.5px solid rgba(22, 246, 107, 0.08);
 }
 
 .game-content {
@@ -422,7 +496,7 @@ h2 {
 
 #output {
   width: 100%;
-  height: 40%;
+  height: 32%;
   background-color: #1a1a1a;
   color: #ddd;
   border: 1px solid rgba(22, 246, 107, 0.2);
@@ -560,3 +634,354 @@ select#languageSelect {
   padding: 6px 12px;
   font-size: 0.85rem;
 }
+
+
+#forfeitBtn {
+  color: red;
+  background-color: rgba(0, 0, 0, 0);
+  width: 20%;
+  height: 30%;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(246, 22, 22, 0);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  border-radius: 50px;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+}
+
+#forfeitBtn i {
+  display: inline-block;
+  font-size: 1.5rem;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+}
+
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 80px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 6px;
+  position: absolute;
+  z-index: 100;
+  bottom: 125%; 
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.75rem;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.game-container::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 250px;
+  height: 250px;
+
+  z-index: 0;
+  pointer-events: none;
+}
+
+.game-content {
+  display: flex;
+  height: calc(100vh - 220px);
+  gap: 28px;
+  position: relative;
+  z-index: 1;
+}
+
+.problem-panel {
+  width: 35%;
+  padding-right: 20px;
+  display: flex;
+  flex-direction: column;
+  min-width: 340px;
+  max-width: 540px;
+}
+
+.problem-details {
+
+  border-radius: 14px;
+  padding: 22px 20px 22px 22px;
+  margin-bottom: 18px;
+  border: 1.5px solid rgba(22, 246, 107, 0.18);
+  box-shadow: 0 6px 20px rgba(22, 246, 107, 0.07) inset;
+  height: 94%;
+  overflow-y: auto;
+}
+
+#questionTitle {
+  font-size: 1.6rem;
+  margin-bottom: 1.3rem;
+  text-align: left;
+  color: #16f66b;
+  border-bottom: 1.5px solid rgba(22, 246, 107, 0.25);
+  padding-bottom: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+#questionDescription {
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  color: #e4e4e4;
+}
+
+#questionExamples pre,
+#questionTestCases pre {
+  background: linear-gradient(90deg, #232323 80%, #16f66b14 100%);
+  padding: 13px 14px;
+  border-radius: 7px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin-bottom: 1.1rem;
+  font-family: 'Consolas', 'Courier New', monospace;
+  border: 1.5px solid rgba(22, 246, 107, 0.11);
+  color: #baffd8;
+  font-size: 1.01rem;
+}
+
+/* Editor Panel */
+.editor-panel {
+  width: 65%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 380px;
+}
+
+#editor {
+  border: 1.5px solid rgba(22, 246, 107, 0.22);
+  border-radius: 14px;
+  margin-bottom: 12px;
+  height: 62%;
+  width: 100%;
+  overflow: hidden;
+
+  box-shadow: 0 4px 12px rgba(22, 246, 107, 0.08);
+}
+
+#output {
+  width: 100%;
+  height: 34%;
+
+  color: #e4e4e4;
+  border: 1.5px solid rgba(22, 246, 107, 0.13);
+  border-radius: 14px;
+  overflow: auto;
+  padding: 16px 18px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  margin-top: 0;
+  box-shadow: 0 2px 8px rgba(22, 246, 107, 0.06) inset;
+  font-size: 1.07rem;
+}
+
+/* Controls */
+.controls {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Timer Status */
+.timer-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 14px 28px;
+
+  border-radius: 14px;
+  margin-bottom: 24px;
+  border: 1.5px solid rgba(22, 246, 107, 0.18);
+  box-shadow: 0 2px 8px rgba(22, 246, 107, 0.05);
+}
+
+.left-section, .center-section, .right-section {
+  text-align: left;
+}
+
+.center-section {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+#timer {
+  font-size: 2.1rem;
+  font-weight: bold;
+  color: #ffa116;
+  min-width: 90px;
+  text-align: center;
+  display: inline-block;
+  text-shadow: 0 0 16px rgba(255, 161, 22, 0.18);
+  letter-spacing: 1px;
+}
+
+.player-status, .opponent-status {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  gap: 8px;
+  color: #e4e4e4;
+}
+
+#userCases, #opponentCases {
+  padding: 7px 14px;
+  background: rgba(22, 246, 107, 0.08);
+  border-radius: 9px;
+  border: 1.5px solid rgba(22, 246, 107, 0.12);
+  font-size: 1.01rem;
+  color: #16f66b;
+}
+
+#userDisplay, #opponentDisplay {
+  color: #16f66b;
+  font-weight: 600;
+}
+
+/* Forfeit Button */
+#forfeitBtn {
+  color: #ff4d4d;
+  background: transparent;
+  width: auto;
+  height: auto;
+  padding: 8px;
+  box-shadow: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1.5px solid rgba(255, 77, 77, 0.22);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: background 0.2s;
+}
+
+#forfeitBtn:hover {
+  background: rgba(255, 77, 77, 0.13);
+  transform: translateY(0) scale(1.07);
+}
+
+#forfeitBtn i {
+  display: inline-block;
+  font-size: 1.3rem;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+}
+
+/* Tooltips */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 90px;
+  background: #222;
+  color: #fff;
+  text-align: center;
+  border-radius: 7px;
+  padding: 7px;
+  position: absolute;
+  z-index: 100;
+  bottom: 130%; 
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Responsive Improvements */
+@media (max-width: 1200px) {
+  .game-content {
+    flex-direction: column;
+    height: auto;
+    gap: 18px;
+  }
+  .problem-panel, .editor-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+  }
+  .problem-details {
+    height: 340px;
+    margin-bottom: 16px;
+  }
+  #editor {
+    height: 320px;
+  }
+  #output {
+    height: 170px;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    padding: 12px 3px;
+    min-height: 400px;
+  }
+  .game-content {
+    gap: 10px;
+  }
+  .problem-panel, .editor-panel {
+    padding: 0;
+  }
+  .problem-details {
+    padding: 12px 8px;
+    font-size: 0.97rem;
+    height: 220px;
+  }
+  #editor {
+    height: 180px;
+  }
+  #output {
+    height: 90px;
+    padding: 8px 5px;
+    font-size: 0.95rem;
+  }
+  .timer-status {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 8px;
+  }
+  #timer {
+    font-size: 1.3rem;
+    min-width: 60px;
+  }
+}
+

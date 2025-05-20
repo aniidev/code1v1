@@ -232,7 +232,7 @@
       "nums": "List[int]"
     },
     "cpp": {
-      "nums": "vector<int>&"
+      "nums": "vector<int>"
     },
     "java": {
       "nums": "int[]"
