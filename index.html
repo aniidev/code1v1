@@ -23,7 +23,7 @@
       <button onclick="location.href='signup.html'" class="secondary" id="signUpBtn">Sign Up</button>       
       <button onclick="location.href='login.html'" id="logInBtn">Login</button>  
       <p id="userHeader" style="align-self: center;"></p>
-      <button onclick="logout()" id="logOutBtn" class="secondary">Log Out</button>        
+      <button onclick="logout()" id="logOutBtn" class="secondary" style="border: 0.1249rem solid #838383;">Log Out</button>        
     </div>   
   </div>      
   
@@ -33,13 +33,12 @@
     <div class="arrow-up"></div>     
     <div class="arrow-up arrow-up-large"></div>          
     <h2>Go Head to Head in DSA Challenges</h2> 
-    <p>Test your programming skills in real-time coding battles!</p>
     <button onclick="findPublicMatch()"><i class="fa-solid fa-play"></i> Find Game</button> 
     <p>OR</p>    
     <button onclick="createRoom()"><i class="fa-solid fa-plus"></i> Create Room</button>
     <div style="display: flex; gap: 1rem; width: 100%; max-width: 400px; margin-top: 1rem;">       
-      <input id="roomInput" placeholder="Enter Room Code" />       
-      <button onclick="joinRoom()">Join</button>     
+      <input id="roomInput" placeholder="Enter Room Code" autocomplete="off"/>       
+      <button onclick="joinRoom()" id="joinBtn">Join</button>     
     </div>             
   </div>      
   

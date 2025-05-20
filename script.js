@@ -60,10 +60,14 @@ function createRoom() {
   if(userData)
   {
     room = Math.random().toString(36).substring(2, 5).toUpperCase();
-    socket.emit('joinRoom', room);
+    socket.emit('joinRoom',{
+      room: room,
+      type: 'create' 
+    });
     document.getElementById('lobby').style.display = 'none';
     document.getElementById('waitingScreen').style.display = 'block';
     document.getElementById('waitingRoomCode').innerText = room;
+
   }
   else
   {
@@ -72,18 +76,17 @@ function createRoom() {
 }
 
 function joinRoom() {
-  if(userData)
-  {
-    room = document.getElementById('roomInput').value.toUpperCase().trim();
+  if (userData) {
+    const room = document.getElementById('roomInput').value.toUpperCase().trim();
     if (room.length !== 3) {
       alert('Room code must be 3 characters!');
       return;
     }
-    socket.emit('joinRoom', room);
-    document.getElementById('lobby').style.display = 'none';
-  }
-  else
-  {
+    socket.emit('joinRoom', {
+      room: room,
+      type: 'join'
+    });
+  } else {
     window.location.href = 'login.html';
   }
 }
@@ -164,10 +167,11 @@ socket.on('connect_error', (err) => {
   console.error('Connection error:', err.message);
 });
 
+
 socket.on('invalidRoom', (msg) => {
+  console.log("invalid room");
   alert(msg);
-  document.getElementById('lobby').style.display = 'block';
-  document.getElementById('game').style.display = 'none';
+
 });
 
 socket.on('eloUpdate', ({ elo, change }) => {
@@ -694,3 +698,4 @@ document.getElementById("forfeitBtn").addEventListener("click", () => {
   console.log("Forfeit button clicked"); 
   socket.emit("forfeit");
 });
+

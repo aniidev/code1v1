@@ -40,71 +40,76 @@ io.on('connection', socket => {
   console.log(`Client connected: ${socket.id}`);
 
   // PRIVATE ROOM LOGIC
-socket.on('joinRoom', async incomingRoom => {
-  const room = incomingRoom.toUpperCase();
-  socket.room = room; 
+socket.on('joinRoom', async (incoming) => {
+  const room = incoming.room.toUpperCase();
+  const joinType = incoming.type; // 'join' or 'create'
+  socket.room = room;
 
+  // Room is full
   if (rooms[room] && rooms[room].length >= 2) {
     socket.emit('invalidRoom', 'Room is full or unavailable.');
     return;
   }
 
-  if (!rooms[room] && socket.request.headers['referer'].includes('join')) {
+  // Room doesn't exist and user is trying to join (not create)
+  if (!rooms[room] && joinType === 'join') {
     socket.emit('invalidRoom', 'Room does not exist.');
     return;
   }
 
+  // Passed validation
   socket.join(room);
   if (!rooms[room]) rooms[room] = [];
   rooms[room].push(socket.id);
 
+  // Ready to start game?
   if (rooms[room].length === 2) {
-  // Get both sockets
-  const player1Socket = io.sockets.sockets.get(rooms[room][0]);
-  const player2Socket = io.sockets.sockets.get(rooms[room][1]);
+    const [id1, id2] = rooms[room];
+    const socket1 = io.sockets.sockets.get(id1);
+    const socket2 = io.sockets.sockets.get(id2);
 
-  if (player1Socket.userId === player2Socket.userId) {
-    socket.emit('invalidRoom', 'You cannot play against yourself.');
-    player2Socket.leave(room);
-    rooms[room].pop();
-    return;
-  }
-
-  // Helper to get username and elo
-  const getUserInfo = async (sock) => {
-    if (sock.userId) {
-      const docSnap = await db.collection("users").doc(sock.userId).get();
-      if (docSnap.exists) {
-        const data = docSnap.data();
-        return {
-          username: data.username || "Player",
-          elo: data.elo || 1000
-        };
-      }
+    if (socket1.userId === socket2.userId) {
+      socket.emit('invalidRoom', 'You cannot play against yourself.');
+      socket2.leave(room);
+      rooms[room].pop();
+      return;
     }
-    return { username: "Player", elo: 1000 };
-  };
 
+    const getUserInfo = async (sock) => {
+      if (sock.userId) {
+        const docSnap = await db.collection("users").doc(sock.userId).get();
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          return {
+            username: data.username || "Player",
+            elo: data.elo || 1000
+          };
+        }
+      }
+      return { username: "Player", elo: 1000 };
+    };
 
-  const player1Info = await getUserInfo(player1Socket);
-  const player2Info = await getUserInfo(player2Socket);
+    const player1Info = await getUserInfo(socket1);
+    const player2Info = await getUserInfo(socket2);
 
-  player1Socket.emit('playerInfo', {
-    self: player1Info.username,
-    opponent: player2Info.username,
-    selfElo: player1Info.elo,
-    opponentElo: player2Info.elo
-  });
-  player2Socket.emit('playerInfo', {
-    self: player2Info.username,
-    opponent: player1Info.username,
-    selfElo: player2Info.elo,
-    opponentElo: player1Info.elo
-  });
+    socket1.emit('playerInfo', {
+      self: player1Info.username,
+      opponent: player2Info.username,
+      selfElo: player1Info.elo,
+      opponentElo: player2Info.elo
+    });
 
-  io.to(room).emit('startGame', getRandomQuestion());
-}
+    socket2.emit('playerInfo', {
+      self: player2Info.username,
+      opponent: player1Info.username,
+      selfElo: player2Info.elo,
+      opponentElo: player1Info.elo
+    });
+
+    io.to(room).emit('startGame', getRandomQuestion());
+  }
 });
+
   // PUBLIC MATCHMAKING
  socket.on('publicMatch', async () => {
   queue.push(socket);
@@ -285,6 +290,7 @@ socket.on('submitCode', async ({ code, won }) => {
           change: -(newWinnerElo - opponentData.elo)
         });
       }
+      socket.disconnect(true); 
     }
 
     delete rooms[room];

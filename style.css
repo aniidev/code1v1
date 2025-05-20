@@ -118,9 +118,7 @@ button {
 
 button:hover, button:focus {
   background: linear-gradient(90deg, #14e061 0%, #0cb450 100%);
-  color: #fff;
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 8px 22px rgba(22, 246, 107, 0.35);
+  transform: translateY(-2px) scale(1.02);
   border-color: #16f66b;
 }
 
