@@ -10,8 +10,13 @@ let opponentName = "Opponent";
 const userData = JSON.parse(localStorage.getItem("userData"));
 
 if (userData) {
-  document.getElementById("welcomeText").textContent =
-    `Welcome, ${userData.username}! ELO: ${userData.elo}`;
+  document.getElementById("userHeader").textContent =
+    `${userData.username}`;
+}
+else
+{
+  document.getElementById("userHeader").textContent =
+    ``;
 }
 
 
@@ -45,7 +50,6 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logInBtn').style.display = 'none';
     document.getElementById('logOutBtn').style.display = 'block';
   } else {
-    
       document.getElementById('signUpBtn').style.display = 'block';
       document.getElementById('logInBtn').style.display = 'block';
       document.getElementById('logOutBtn').style.display = 'none';
@@ -685,3 +689,8 @@ function escapeString(str) {
 function isArrayType(type) {
   return /\[\]|\bList\b|\bvector\b/.test(type);
 }
+
+document.getElementById("forfeitBtn").addEventListener("click", () => {
+  console.log("Forfeit button clicked"); 
+  socket.emit("forfeit");
+});

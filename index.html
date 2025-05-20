@@ -23,6 +23,7 @@
     <div class="actions">       
       <button onclick="location.href='signup.html'" style="background-color: transparent; color: #e4e4e4; border: 1px solid rgba(255,255,255,0.1);" id="signUpBtn">Sign Up</button>       
       <button onclick="location.href='login.html'" id="logInBtn">Login</button>  
+      <p id="userHeader" style="align-self: center;"></p>
       <button onclick="logout()" id="logOutBtn" style="background-color: transparent; color: #e4e4e4; border: 1px solid rgba(255,255,255,0.1);">Log Out</button>        
     </div>   
   </div>      
@@ -32,8 +33,7 @@
     <h1 id="welcomeText"></h1>    
     <div class="arrow-up"></div>     
     <div class="arrow-up arrow-up-large"></div>          
-    <h2>Welcome to <span class="accent">Code</span>1v1</h2>     
-    <p>Go head to head in DSA</p>     
+    <h2>Code1v1: Go Head to Head in DSA</h2> 
     <button onclick="findPublicMatch()">Find Game</button> 
     <p>OR</p>    
     <button onclick="createRoom()">Create Room</button>
@@ -77,9 +77,7 @@
   
   <!-- Game Area -->   
   <div id="game">     
-    
     <div class="game-container">  
-      
       <div class="timer-status">
   <div class="left-section">
     <div class="opponent-status">
@@ -88,7 +86,8 @@
   </div>
 
   <div class="center-section">
-    <div><span id="timer">15:00</span></div>
+    
+    <div><button id="forfeitBtn" style="color:white; background-color: red; width: 20%; height:30%; text-align: center;  box-shadow: 0 4px 12px rgba(246, 22, 22, 0.3);"><i class="fa-solid fa-flag"></i></button><span id="timer">15:00</span></div>
     <div class="controls">
       <label for="languageSelect">Language:</label>
       <select id="languageSelect" onchange="setLanguage()" style="justify-content: right;">
@@ -101,14 +100,12 @@
   </div>
 
   <div class="right-section">
+    
     <div class="player-status">
       <div id="userCases"><span id="userDisplay"></span>: 0/0 Testcases</div>
     </div>
   </div>
 </div>
-    
-    
-      
       <div class="game-content">         
         <div class="problem-panel">           
           <div class="problem-details">             

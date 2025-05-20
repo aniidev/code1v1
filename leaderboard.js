@@ -1,15 +1,22 @@
-import { collection, query, orderBy, getDocs } from "https://esm.sh/firebase/firestore";
+import { collection, query, getDocs } from "https://esm.sh/firebase/firestore";
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged } from "https://esm.sh/firebase/auth";
 
-// Fetch all users ordered by elo descending
+// Fetch all users (no ordering here, we sort in JS)
 async function fetchLeaderboard() {
   const usersRef = collection(db, "users");
-  const q = query(usersRef, orderBy("elo", "desc"));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(usersRef);
   const users = [];
   snapshot.forEach(doc => users.push({ ...doc.data(), uid: doc.id }));
   return users;
+}
+
+// Calculate win rate for each user (to sort by)
+function getWinRate(user) {
+  if (user.totalMatches && user.wins) {
+    return user.wins / user.totalMatches;
+  }
+  return 0;
 }
 
 // Render leaderboard rows and highlight the current user
@@ -21,9 +28,7 @@ function renderLeaderboard(users, currentUid) {
       ? user.username.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : "??";
     const isCurrentUser = user.uid === currentUid;
-    const winRate = (user.totalMatches && user.wins)
-      ? Math.round((user.wins / user.totalMatches) * 100)
-      : 0;
+    const winRate = Math.round(getWinRate(user) * 100);
     const tr = document.createElement('tr');
     if (isCurrentUser) tr.classList.add("your-rank-highlight");
     tr.innerHTML = `
@@ -50,37 +55,57 @@ function renderLeaderboard(users, currentUid) {
   });
 }
 
-// Update "Your Rank", "Wins", "Total Matches", "Total Points"
+// Update "Your Rank" and "Your Elo"
 function updateYourStats(users, currentUid) {
   const yourRankElem = document.getElementById('your-rank');
   const yourEloElem = document.getElementById('your-elo');
-  const yourWinsElem = document.getElementById('your-wins');
-  const yourMatchesElem = document.getElementById('your-matches');
   const idx = users.findIndex(u => u.uid === currentUid);
   if (idx !== -1) {
-     const user = users[idx];
+    const user = users[idx];
     const rank = idx + 1;
     const topPercent = calculateTopPercent(rank, users.length);
     yourRankElem.innerHTML = `#${rank} <span class="top-percent">${topPercent}</span>`;
     yourEloElem.textContent = user.elo ?? "--";
-    yourWinsElem.textContent = user.wins ?? "0";
-    yourMatchesElem.textContent = user.totalMatches ?? "0";
   } else {
     yourRankElem.textContent = "--";
     yourEloElem.textContent = "--";
-    yourWinsElem.textContent = "--";
-    yourMatchesElem.textContent = "--";
   }
 }
-
-// Wait for auth, then fetch and render leaderboard
-onAuthStateChanged(auth, async (user) => {
-  const users = await fetchLeaderboard();
-  renderLeaderboard(users, user?.uid);
-  updateYourStats(users, user?.uid);
-});
 
 function calculateTopPercent(rank, totalUsers) {
   if (!rank || !totalUsers) return "";
   return `Top ${(rank / totalUsers * 100).toFixed(2)}%`;
 }
+
+// Main function to fetch, sort and render
+async function loadAndRenderLeaderboard(sortBy = "elo") {
+  const users = await fetchLeaderboard();
+
+  // Sort users based on selected criteria
+  users.sort((a, b) => {
+    if (sortBy === "totalMatches") {
+      return (b.totalMatches ?? 0) - (a.totalMatches ?? 0);
+    } else if (sortBy === "winRate") {
+      return getWinRate(b) - getWinRate(a);
+    } else { // default Elo
+      return (b.elo ?? 0) - (a.elo ?? 0);
+    }
+  });
+
+  const currentUser = auth.currentUser;
+  renderLeaderboard(users, currentUser?.uid);
+  updateYourStats(users, currentUser?.uid);
+}
+
+// Wait for auth, then initial load + set up filter listener
+onAuthStateChanged(auth, user => {
+  if (!user) return;
+
+  const categoryFilter = document.getElementById('categoryFilter');
+  categoryFilter.addEventListener('change', () => {
+    loadAndRenderLeaderboard(categoryFilter.value);
+  });
+
+  // Initial load with default sort by elo
+  loadAndRenderLeaderboard(categoryFilter.value);
+});

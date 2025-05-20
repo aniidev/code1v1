@@ -62,7 +62,7 @@ socket.on('joinRoom', async incomingRoom => {
   // Get both sockets
   const player1Socket = io.sockets.sockets.get(rooms[room][0]);
   const player2Socket = io.sockets.sockets.get(rooms[room][1]);
-  
+
   if (player1Socket.userId === player2Socket.userId) {
     socket.emit('invalidRoom', 'You cannot play against yourself.');
     player2Socket.leave(room);
@@ -273,23 +273,94 @@ socket.on('submitCode', async ({ code, won }) => {
           wins: myData.wins || 0,
           totalMatches: (myData.totalMatches || 0) + 1
         });
+        
 
         opponentSocket.emit('result', 'Opponent disconnected - You win!');
         opponentSocket.emit('eloUpdate', {
           elo: newWinnerElo,
           change: newWinnerElo - opponentData.elo
         });
+        socket.emit('eloUpdate', {
+          elo: newLoserElo,
+          change: -(newWinnerElo - opponentData.elo)
+        });
       }
     }
 
-    // Clean up room
     delete rooms[room];
     if (opponentId) {
       io.to(opponentId).emit('opponentLeft');
     }
   }
 });
+socket.on("forfeit", async () => {
+  const room = socket.room;
+  console.log(`Client forfeited: ${socket.id}`);
+
+  // Remove from public match queue
+  queue = queue.filter(s => s.id !== socket.id);
+
+  if (room && rooms[room]) {
+    const opponentId = rooms[room].find(id => id !== socket.id);
+    const opponentSocket = io.sockets.sockets.get(opponentId);
+
+    if (opponentSocket && socket.userId && opponentSocket.userId) {
+      const myDocRef = db.collection("users").doc(socket.userId);
+      const opponentDocRef = db.collection("users").doc(opponentSocket.userId);
+
+      const myDoc = await myDocRef.get();
+      const opponentDoc = await opponentDocRef.get();
+
+      if (myDoc.exists && opponentDoc.exists) {
+        const myData = myDoc.data();
+        const opponentData = opponentDoc.data();
+
+        const [newWinnerElo, newLoserElo] = updateElo(opponentData.elo, myData.elo);
+        const opponentEloChange = newWinnerElo - opponentData.elo;
+        const myEloChange = newLoserElo - myData.elo;
+
+        // Update opponent (winner)
+        await opponentDocRef.update({
+          elo: newWinnerElo,
+          wins: (opponentData.wins || 0) + 1,
+          totalMatches: (opponentData.totalMatches || 0) + 1
+        });
+
+        // Update forfeiting player (loser)
+        await myDocRef.update({
+          elo: newLoserElo,
+          wins: myData.wins || 0,
+          totalMatches: (myData.totalMatches || 0) + 1
+        });
+
+        // Notify both players
+        opponentSocket.emit('result', 'Opponent forfeited - You win!');
+        opponentSocket.emit('eloUpdate', {
+          elo: newWinnerElo,
+          change: opponentEloChange
+        });
+
+        socket.emit('result', 'You forfeited - You lose!');
+        socket.emit('eloUpdate', {
+          elo: newLoserElo,
+          change: myEloChange
+        });
+      }
+    }
+
+    // Room cleanup
+    delete rooms[room];
+    if (opponentId) {
+      io.to(opponentId).emit('opponentLeft');
+    }
+  }
+
+  socket.disconnect(true); // Force disconnect
 });
+
+});
+
+
 
 server.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
