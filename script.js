@@ -8,6 +8,8 @@ let won = false;
 let username = "Player";
 let opponentName = "Opponent";
 const userData = JSON.parse(localStorage.getItem("userData"));
+let opponentPassed = 0;
+let userPassed = 0;
 
 if (userData) {
   document.getElementById("userHeader").textContent =
@@ -86,6 +88,8 @@ function joinRoom() {
       room: room,
       type: 'join'
     });
+        document.getElementById('lobby').style.display = 'none';
+
   } else {
     window.location.href = 'login.html';
   }
@@ -204,6 +208,8 @@ socket.on('waitingForOpponent', () => {
 
 function returnLobby()
 {
+  opponentPassed = 0;
+  userPassed = 0;
   window.location.reload(true);
   document.getElementById('lobby').style.display = 'block';
   document.getElementById('header').style.display = 'block';
@@ -599,14 +605,15 @@ ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
 
     // Final status summary
     const allPassed = passed === testCases.length;
-    statusHTML = `<div class="summary ${allPassed ? 'passed' : 'failed'}">` +
-                 `Passed ${passed}/${testCases.length} test cases` +
-                 `${allPassed ? ' 🎉' : ''}</div>` + statusHTML;
 
-    document.getElementById('status').innerHTML = statusHTML;
     document.getElementById('output').innerHTML = outputHTML || "<pre>No output</pre>";
 
     won = allPassed;
+
+  socket.emit('testCaseUpdate', {
+      passed: passed,
+      total: testCases.length
+  });
 
   } catch (error) {
     document.getElementById('status').innerHTML = 
@@ -699,3 +706,43 @@ document.getElementById("forfeitBtn").addEventListener("click", () => {
   socket.emit("forfeit");
 });
 
+socket.on('caseProgress', ({ passed, total }) => {
+  updateUserCases(passed, total);
+});
+
+socket.on('opponentCaseProgress', ({ passed, total, name }) => {
+  updateOpponentCases(passed, total, name);
+});
+
+function updateUserCases(passed, total) {
+  userPassed = passed;
+  if(userPassed > opponentPassed)
+  {
+    document.getElementById('userCases').classList.remove('loser');
+    document.getElementById('opponentCases').classList.add('loser');
+  }
+  else if(userPassed == opponentPassed)
+  {
+    document.getElementById('userCases').classList.remove('loser');
+    document.getElementById('opponentCases').classList.remove('loser');
+  }
+
+  document.getElementById('userCases').innerHTML =
+    `<span id="userDisplay">${document.getElementById('userDisplay').textContent}</span>: ${passed}/${total} Testcases`;
+}
+
+function updateOpponentCases(passed, total) {
+  opponentPassed = passed;  
+    if(userPassed < opponentPassed)
+  {
+    document.getElementById('userCases').classList.add('loser');
+    document.getElementById('opponentCases').classList.remove('loser');
+  }
+  else if(userPassed == opponentPassed)
+  {
+    document.getElementById('userCases').classList.remove('loser');
+    document.getElementById('opponentCases').classList.remove('loser');
+  }
+  document.getElementById('opponentCases').innerHTML =
+    `${passed}/${total} Testcases: <span id="opponentDisplay">${document.getElementById('opponentDisplay').textContent}</span>`;
+}

@@ -234,8 +234,6 @@ socket.on('submitCode', async ({ code, won }) => {
     io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
   }
 } else if (myUserId && opponentUserId) {
-
-
   socket.emit('result', 'Wrong Answer');
 }
 });
@@ -364,6 +362,23 @@ socket.on("forfeit", async () => {
   socket.disconnect(true); // Force disconnect
 });
 
+socket.on('testCaseUpdate', ({ passed, total }) => {
+  const room = socket.room;
+  if (!room || !rooms[room]) return;
+
+  // Update sender's display
+  socket.emit('caseProgress', { passed, total });
+
+  // Notify opponent
+  const opponentId = rooms[room].find(id => id !== socket.id);
+  if (opponentId) {
+    io.to(opponentId).emit('opponentCaseProgress', {
+      passed,
+      total,
+      name: socket.username || "Opponent"
+    });
+  }
+});
 });
 
 

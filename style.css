@@ -319,7 +319,6 @@ textarea {
 
 /* New game container style */
 .game-container {
-
   border-radius: 20px;
   padding: 32px 28px;
   margin: 2rem auto 1.5rem auto;
@@ -329,8 +328,8 @@ textarea {
   position: relative;
   overflow: hidden;
   min-height: 600px;
-  height: calc(100vh - 100px);
-  border: 1.5px solid rgba(22, 246, 107, 0.08);
+  height: calc(100vh - 100px) * 1.05;
+
 }
 
 .game-content {
@@ -858,10 +857,15 @@ select#languageSelect {
 }
 
 #userDisplay, #opponentDisplay {
-  color: #16f66b;
+  color: white;
   font-weight: 600;
 }
 
+.loser {
+  background: rgba(246, 22, 22, 0.08) !important;
+  border: 1.5px solid rgba(246, 22, 22, 0.18) !important;
+  color: #f61616 !important;
+}
 /* Forfeit Button */
 #forfeitBtn {
   color: #ff4d4d;

@@ -16,7 +16,7 @@
   <div class="header" id="header">     
     <div class="logo">Code1v1</div>     
     <div class="nav">       
-      <a href="#" class="active"><i class="fa-solid fa-house"></i> Home</a>            
+      <a href="index.html" class="active"><i class="fa-solid fa-house"></i> Home</a>            
       <a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a>     
     </div>     
     <div class="actions">       
@@ -47,7 +47,6 @@
     <h2>Waiting for opponent...</h2>     
     <p>Share your room code with a friend to start the challenge!</p>     
     <div>Room Code: <span id="waitingRoomCode">ABCD1234</span></div>
-    <button class="secondary" onclick="returnLobby()"><i class="fa-solid fa-arrow-left"></i> Back to Lobby</button>
   </div>      
 
   <div id="publicWaiting" class="container" style="display:none;">     
@@ -85,9 +84,9 @@
   <div id="game">     
     <div class="game-container">  
       <div class="timer-status">
-        <div class="left-section">
+        <div class="right-section">
           <div class="opponent-status">
-            <div id="opponentCases">0/0 Testcases: <span id="opponentDisplay">Opponent</span></div>
+            <div id="opponentCases"><span id="opponentDisplay">Opponent</span>: --/0 Testcases</div>
           </div>
         </div>
 
@@ -101,9 +100,9 @@
           <span id="timer">15:00</span>
         </div>
     
-        <div class="right-section">
+        <div class="left-section">
           <div class="player-status">
-            <div id="userCases"><span id="userDisplay">You</span>: 0/0 Testcases</div>
+            <div id="userCases"><span id="userDisplay">You</span>: --/0 Testcases</div>
           </div>
         </div>
       </div>
