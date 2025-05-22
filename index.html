@@ -3,7 +3,7 @@
 <head>   
   <meta charset="UTF-8" />   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Code1v1 - Competitive Coding Platform</title>   
+  <title>Code1v1</title>   
   <link rel="stylesheet" href="style.css" />   
   <script src="/socket.io/socket.io.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"> 
@@ -12,12 +12,11 @@
   <script type="module" src="./auth.js"></script>
 </head> 
 <body>   
-  <!-- Header with improved structure -->
   <div class="header" id="header">     
     <div class="logo">Code1v1</div>     
     <div class="nav">       
       <a href="index.html" class="active"><i class="fa-solid fa-house"></i> Home</a>            
-      <a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a>     
+      <a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a>    
     </div>     
     <div class="actions">       
       <button onclick="location.href='signup.html'" class="secondary" id="signUpBtn">Sign Up</button>       
@@ -42,6 +41,9 @@
       <button onclick="joinRoom()" id="joinBtn">Join</button>     
     </div>             
   </div>      
+  <a id="bugsLink" href="https://docs.google.com/forms/d/e/1FAIpQLSfgv_tfMUdBUHaPARlyh695oSkfwJj8HftRQJrF26YCkj0ebw/viewform?usp=dialog"  target="_blank" rel="noopener noreferrer">
+    <i class="fa-solid fa-file"></i> Report Bugs
+  </a> 
   
   <!-- Waiting Screen -->   
   <div id="waitingScreen" class="container">     
@@ -51,8 +53,8 @@
   </div>      
 
   <div id="publicWaiting" class="container" style="display:none;">     
-    <h2>Opponent Found!</h2>
-    <p>Preparing your coding challenge...</p>
+    <h2></h2>
+    <p>Finding an opponent...</p>
     <div class="loading-indicator">
       <div class="loading-spinner"></div>
     </div>
@@ -119,7 +121,7 @@
         </div>         
         <div class="editor-panel">       
           <div id="editor"></div>           
-          <div class="controls">
+          <div class="controls"> 
             <div>
               <label for="languageSelect">Language:</label>
               <select id="languageSelect" onchange="setLanguage()">
@@ -134,14 +136,11 @@
               <button onclick="submitCode()"><i class="fa-solid fa-paper-plane"></i> Submit</button>
             </div>           
           </div>           
-          <div id="output"></div>  
-          <div id="status"></div>         
+          <div id="output"></div>          
         </div>       
       </div>     
     </div>   
   </div>
-
-
   <div id="endScreen" style="display: none">
     <div class="container">
       <div id="end-status">You Won!</div>
@@ -152,9 +151,8 @@
       <button onclick="returnLobby()" class="button">Back to Lobby</button>
     </div>
   </div>  
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfgv_tfMUdBUHaPARlyh695oSkfwJj8HftRQJrF26YCkj0ebw/viewform?usp=dialog"  target="_blank" rel="noopener noreferrer">
-      <button id="bugsButton">Report Bugs</button>
-    </a>
+
+  
   <script src="script.js"></script>
 </body> 
 </html>

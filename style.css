@@ -210,9 +210,7 @@ textarea {
 
 #vsScreen {
   text-align: center;
-
   border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(22, 246, 107, 0.12);
   padding: 2.5rem 1.5rem 2rem 1.5rem;
   margin-top: 2rem;
   margin-bottom: 2rem;
@@ -240,7 +238,6 @@ textarea {
   font-size: 3.5rem;
   font-weight: 900;
   color: #16f66b;
-  text-shadow: 0 0 30px #16f66b, 0 0 10px #fff;
   margin: 0 2rem;
 }
 
@@ -255,7 +252,7 @@ textarea {
   justify-content: center;
   border-radius: 50%;
   border: 3px solid #16f66b55;
-  box-shadow: 0 8px 24px #16f66b33;
+
 }
 
 #user, #opponent {
@@ -426,7 +423,7 @@ h2 {
   border: 1px solid rgba(22, 246, 107, 0.2);
   border-radius: 12px;
   margin-bottom: 0rem;
-  height: 100%;
+  height: 120%;
   width: 100%;
 }
 
@@ -491,7 +488,6 @@ h2 {
   padding: 15px;
   margin-bottom: 15px;
   border: 1px solid rgba(22, 246, 107, 0.2);
-  height: 92.4%;
   overflow-y: auto;
   margin-bottom: 4rem;
 }
@@ -992,8 +988,13 @@ select#languageSelect {
   }
 }
 
-#bugsButton{
+#bugsLink{
   position: fixed;
   bottom: 20px;
   right: 20px;
+  z-index: 3;
+}
+
+a {
+  color:#b4b4b4;
 }

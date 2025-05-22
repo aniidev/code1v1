@@ -141,7 +141,7 @@
 
 .pagination button {
   background-color: #1e1e1e !important;
-  color: #e4e4e4;
+  color: #094520;
   border: 1px solid rgba(255, 255, 255, 0.1);
   width: 40px;
   height: 40px;
@@ -153,7 +153,7 @@
   font-size: 0.9rem;
 }
 
-.pagination button.active {
+.pagination button.active  {
   background-color: #16f66b;
   color: #0a0a0a;
   border: none;

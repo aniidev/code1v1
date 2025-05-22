@@ -149,7 +149,6 @@ function submitCode() {
   const code = editor.getValue();
   runCode();
   socket.emit('submitCode', { room, code, won});
-  document.getElementById('status').innerText = 'Submitted...';
 }
 
 
@@ -157,7 +156,7 @@ socket.on('result', (msg) => {
   console.log('Received result:', msg);
   if(msg === "Wrong Answer")
   {
-    document.getElementById('status').innerHTML = 'Wrong Answer';
+    //add some msg later 
   }
   else
   {
@@ -557,8 +556,6 @@ testCases.forEach(({ inputs, expected }, idx) => {
 async function runCode() {
   const code = editor.getValue();
   const lang = document.getElementById('languageSelect').value;
-
-  document.getElementById('status').innerText = 'Running all test cases...';
   document.getElementById('output').innerHTML = '<pre class="info">Sending request to Piston API...</pre>';
 
   try {
@@ -677,8 +674,6 @@ ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
     });
 
   } catch (error) {
-    document.getElementById('status').innerHTML = 
-      `<div class="error">❌ Error: ${error.message}</div>`;
     document.getElementById('output').innerHTML = 
       `<pre class="error">${error.stack || error}</pre>`;
     console.error('Execution error:', error);
