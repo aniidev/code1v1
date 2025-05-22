@@ -104,6 +104,7 @@ socket.on('startGame', (question) => {
   document.getElementById('vsScreen').style.display = 'block';
   document.getElementById('userDisplay').innerHTML = username;
   document.getElementById('opponentDisplay').innerHTML = opponentName;
+  window.addEventListener('beforeunload', confirmBeforeUnload);
   let timeLeft = 5;
   document.getElementById('vsTimer').innerText = `0:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
   const vsInterval = setInterval(() => {
@@ -160,6 +161,7 @@ socket.on('result', (msg) => {
   }
   else
   {
+    window.removeEventListener('beforeunload', confirmBeforeUnload);
     document.getElementById('game').style.display = 'none';
     document.getElementById('endScreen').style.display = 'block';
     document.getElementById('end-status').innerText = msg;
@@ -804,4 +806,9 @@ function updateOpponentCases(passed, total) {
   }
   document.getElementById('opponentCases').innerHTML =
     `${passed}/${total} Testcases: <span id="opponentDisplay">${document.getElementById('opponentDisplay').textContent}</span>`;
+}
+
+function confirmBeforeUnload(e) {
+  e.preventDefault();
+  e.returnValue = ''; 
 }
