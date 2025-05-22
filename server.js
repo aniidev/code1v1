@@ -253,7 +253,7 @@ socket.on('submitCode', async ({ code, won }) => {
   // Remove from public match queue if in it
   queue = queue.filter(s => s.id !== socket.id);
 
-  if (room && rooms[room]) {
+  if (room && rooms[room] && !rooms[room].gameOver) {
     const opponentId = rooms[room].find(id => id !== socket.id);
     const opponentSocket = io.sockets.sockets.get(opponentId);
 

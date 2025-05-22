@@ -264,41 +264,39 @@ function formatArg(val, type, lang) {
   const isList = /\[\]|\bList\b|\bvector\b/.test(type);
 
   if (isList) {
+    // Determine element type
+    let elemType;
+    if (/int|number/.test(type)) elemType = 'number';
+    else if (/bool|boolean/.test(type)) elemType = 'boolean';
+    else elemType = 'string';
+
+    // Format elements
     let elems = val.map(v => {
-      if (typeof v === 'string') return `"${v}"`;
+      if (elemType === 'string') return `"${v}"`;
+      if (elemType === 'boolean') return (lang === 'python' ? (v ? 'True' : 'False') : (v ? 'true' : 'false'));
       return v;
     }).join(', ');
 
+    // Python/JavaScript
     if (lang === 'python' || lang === 'javascript') {
       return `[${elems}]`;
     }
 
+    // Java
     if (lang === 'java') {
       if (/\[\]$/.test(type)) {
-        // For primitive arrays - determine type from actual values
-        if (typeof val[0] === 'number' || /int/.test(type)) {
-          return `new int[]{${elems}}`;
-        }
-        if (typeof val[0] === 'boolean' || /bool/.test(type)) {
-          return `new boolean[]{${elems}}`;
-        }
-        if (typeof val[0] === 'string' || /String/.test(type)) {
-          return `new String[]{${elems}}`;
-        }
-        // Default to int[] if unclear
+        if (elemType === 'number') return `new int[]{${elems}}`;
+        if (elemType === 'boolean') return `new boolean[]{${elems}}`;
+        if (elemType === 'string') return `new String[]{${elems}}`;
         return `new int[]{${elems}}`;
       } else {
-        // For List<T>
-        const generic = typeof val[0] === 'number' ? 'Integer' : 
-                       typeof val[0] === 'boolean' ? 'Boolean' : 'String';
         return `Arrays.asList(${elems})`;
       }
     }
 
+    // C++
     if (lang === 'cpp') {
-      const T = typeof val[0] === 'number' ? 'int' :
-                typeof val[0] === 'boolean' ? 'bool' : 'string';
-      return `std::vector<${T}> vec = {${elems}};`;
+      return `{${elems}}`;
     }
   }
 
@@ -310,57 +308,102 @@ function formatArg(val, type, lang) {
 
 function parseInputValue(value, type) {
   try {
-    // For arrays/lists
+    // Handle arrays/lists/vectors
     if (type && (type.includes('List') || type.includes('[]') || type.includes('vector'))) {
-      // Accept both JSON and Python/JavaScript-like arrays
-      if (value.startsWith('[') && value.endsWith(']')) {
-        return JSON.parse(value.replace(/'/g, '"'));
+      let arrStr = value.trim();
+      if (arrStr.startsWith('[') && arrStr.endsWith(']')) {
+        arrStr = arrStr.slice(1, -1);
       }
-      // Fallback: comma-separated
-      return value.split(',').map(v => v.trim().replace(/^['"]|['"]$/g, ''));
+      let elems = arrStr.split(',').map(v => v.trim().replace(/^['"]|['"]$/g, ''));
+      
+      if (/int|number/.test(type)) {
+        return elems.map(e => Number(e));
+      }
+      if (/bool|boolean/.test(type)) {
+        return elems.map(e => {
+          if (typeof e === 'boolean') return e;
+          return e.toLowerCase() === 'true';
+        });
+      }
+      return elems;
     }
-    // For booleans
+    
     if (type && (type === 'bool' || type === 'boolean')) {
       if (typeof value === 'boolean') return value;
       return value.trim().toLowerCase() === 'true';
     }
-    // For numbers
+    
     if (type && (type === 'int' || type === 'number')) {
       return Number(value);
     }
-    // For strings
+    
     return value.replace(/^['"]|['"]$/g, '');
   } catch {
     return value;
   }
 }
 
+function parseTestCaseInputs(tcInput, argNames) {
+  // Handle the case where we have multiple parameters separated by comma
+  // Split smartly to handle arrays within the input
+  let depth = 0;
+  let current = '';
+  let parts = [];
+  
+  for (let i = 0; i < tcInput.length; i++) {
+    const char = tcInput[i];
+    if (char === '[') depth++;
+    else if (char === ']') depth--;
+    else if (char === ',' && depth === 0) {
+      parts.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  if (current.trim()) parts.push(current.trim());
+  
+  // If we have the right number of arguments, return them
+  if (parts.length === argNames.length) {
+    return parts;
+  }
+  
+  // Fallback: split by lines if comma splitting doesn't work
+  const lines = tcInput.split('\n').map(l => l.trim()).filter(Boolean);
+  if (argNames.length === 1) return [lines.join('\n')];
+  return lines.length >= argNames.length ? lines.slice(0, argNames.length) : parts;
+}
+
 function generateTestHarness(lang, funcName, testCases, inputTypes, returnType) {
   const argNames = Object.keys(inputTypes);
-
-  function parseInputs(tcInput) {
-    const lines = tcInput.split('\n').map(l => l.trim()).filter(Boolean);
-    // If only one argument, treat the whole input as one value
-    if (argNames.length === 1) return [lines.join('\n')];
-    // If multiple, treat each line as a separate argument
-    return lines;
-  }
 
   // --- PYTHON ---
   if (lang === 'python') {
     let harness = '\n# === Test Harness ===\n';
     harness += 'test_cases = [\n';
     testCases.forEach(tc => {
-      const inputs = parseInputs(tc.input);
-      const formattedInputs = inputs.map((v, i) => formatArg(parseInputValue(v, inputTypes[argNames[i]]), inputTypes[argNames[i]], lang));
+      const inputs = parseTestCaseInputs(tc.input, argNames);
+      const formattedInputs = inputs.map((v, i) => {
+        const argType = inputTypes[argNames[i]];
+        const parsedValue = parseInputValue(v, argType);
+        return formatArg(parsedValue, argType, lang);
+      });
       const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
-      // Always wrap inputs as tuple for unpacking
-      harness += `    ((${formattedInputs.join(', ')}), ${expected}),\n`;
+      
+      if (argNames.length === 1) {
+        harness += `    (${formattedInputs[0]}, ${expected}),\n`;
+      } else {
+        harness += `    ((${formattedInputs.join(', ')}), ${expected}),\n`;
+      }
     });
     harness += ']\n';
     harness += `for idx, (inputs, expected) in enumerate(test_cases, 1):\n`;
     harness += `    try:\n`;
-    harness += `        result = ${funcName}(*inputs) if isinstance(inputs, tuple) else ${funcName}(inputs)\n`;
+    if (argNames.length === 1) {
+      harness += `        result = ${funcName}(inputs)\n`;
+    } else {
+      harness += `        result = ${funcName}(*inputs)\n`;
+    }
     harness += `        print(f"Case {idx}: {'PASS' if result == expected else 'FAIL'} | Expected: {expected} | Output: {result}")\n`;
     harness += `    except Exception as e:\n`;
     harness += `        print(f"Case {idx}: ERROR | {str(e)}")\n`;
@@ -372,10 +415,13 @@ function generateTestHarness(lang, funcName, testCases, inputTypes, returnType) 
     let harness = '\n// === Test Harness ===\n';
     harness += 'const testCases = [\n';
     testCases.forEach(tc => {
-      const inputs = parseInputs(tc.input);
-      const formattedInputs = inputs.map((v, i) => formatArg(parseInputValue(v, inputTypes[argNames[i]]), inputTypes[argNames[i]], lang));
+      const inputs = parseTestCaseInputs(tc.input, argNames);
+      const formattedInputs = inputs.map((v, i) => {
+        const argType = inputTypes[argNames[i]];
+        const parsedValue = parseInputValue(v, argType);
+        return formatArg(parsedValue, argType, lang);
+      });
       const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
-      // Always wrap inputs as array
       harness += `  { inputs: [${formattedInputs.join(', ')}], expected: ${expected} },\n`;
     });
     harness += '];\n';
@@ -393,108 +439,99 @@ testCases.forEach(({ inputs, expected }, idx) => {
   }
   
   // --- JAVA ---
-if (lang === 'java') {
-  let importLine = '';
-  if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
-    importLine = 'import java.util.*;';
-  }
-  
-  let harness = `\n${importLine}\n// === Test Harness ===\n`;
-  harness += `    public static void runTests() {\n`;
-  
-  testCases.forEach((tc, idx) => {
-    // Split input by lines, but handle multi-line inputs properly
-    const inputLines = tc.input.split('\n').map(l => l.trim()).filter(Boolean);
-    
-    // Map each input line to its corresponding argument
-    const formatted = argNames.map((argName, i) => {
-      const inputValue = inputLines[i] || '';
-      const argType = inputTypes[argName];
-      
-      // Parse the input value according to its type
-      let parsedValue;
-      if (argType.includes('[]') || argType.includes('List')) {
-        // Handle array/list input - remove brackets and split
-        const cleanInput = inputValue.replace(/^\[|\]$/g, '');
-        parsedValue = cleanInput.split(',').map(v => {
-          const trimmed = v.trim();
-          return isNaN(trimmed) ? trimmed.replace(/['"]/g, '') : Number(trimmed);
-        });
-      } else {
-        // Handle single value
-        parsedValue = isNaN(inputValue) ? inputValue : Number(inputValue);
-      }
-      
-      return formatArg(parsedValue, argType, lang);
-    });
-    
-    const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
-    
-    harness += `
-        try {
-            Object result = ${funcName}(${formatted.join(', ')});
-            boolean passed = `;
-    
-    // Handle comparison based on return type
-    if (returnType === 'bool' || returnType === 'boolean') {
-      harness += `result.equals(${expected})`;
-    } else if (returnType === 'int' || returnType === 'number') {
-      harness += `result.equals(${expected})`;
-    } else if (returnType.includes('List') || returnType.includes('[]')) {
-      harness += `java.util.Arrays.equals((int[])result, ${expected})`;
-    } else {
-      harness += `result.equals(${expected})`;
+  if (lang === 'java') {
+    let importLine = '';
+    if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
+      importLine = 'import java.util.*;';
     }
     
-    harness += `; 
+    let harness = `\n${importLine}\n// === Test Harness ===\n`;
+    harness += `    public static void runTests() {\n`;
+    
+    testCases.forEach((tc, idx) => {
+      const inputs = parseTestCaseInputs(tc.input, argNames);
+      
+      const formatted = inputs.map((inputValue, i) => {
+        const argType = inputTypes[argNames[i]];
+        const parsedValue = parseInputValue(inputValue, argType);
+        return formatArg(parsedValue, argType, lang);
+      });
+      
+      const expected = parseInputValue(tc.expectedOutput, returnType);
+      
+      harness += `
+        try {
+            `;
+            
+      // Determine the correct return type for Java
+      let javaReturnType = returnType;
+      if (returnType === 'bool') javaReturnType = 'boolean';
+      if (returnType === 'int') javaReturnType = 'int';
+      if (returnType.includes('[]')) javaReturnType = returnType;
+      
+      harness += `${javaReturnType} result = ${funcName}(${formatted.join(', ')});
+            boolean passed = `;
+      
+      // Handle comparison based on return type
+      if (returnType === 'bool' || returnType === 'boolean') {
+        harness += `result == ${expected}`;
+      } else if (returnType === 'int' || returnType === 'number') {
+        harness += `result == ${expected}`;
+      } else if (returnType.includes('[]')) {
+        harness += `java.util.Arrays.equals(result, ${formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang)})`;
+      } else {
+        harness += `result.equals("${expected}")`;
+      }
+      
+      harness += `; 
             System.out.println("Case ${idx+1}: " + (passed ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + result);
         } catch (Exception e) {
             System.err.println("Case ${idx+1}: ERROR | " + e.getMessage());
         }
     `;
-  });
-  
-  harness += `    }\n`;
-  harness += `
+    });
+    
+    harness += `    }\n`;
+    harness += `
     public static void main(String[] args) {
         runTests();
     }`;
-  
-  return harness;
-}
+    
+    return harness;
+  }
 
   // --- C++ ---
   if (lang === 'cpp') {
     let harness = `\n// === Test Harness ===\n`;
     
-    // Add function to run all tests
     harness += `void runTests() {\n`;
     testCases.forEach((tc, idx) => {
-      const inputs = parseInputs(tc.input);
-      const formatted = inputs.map((v, i) =>
-        formatArg(parseInputValue(v, inputTypes[argNames[i]]),
-                  inputTypes[argNames[i]], lang));
-      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType),
-                                returnType, lang);
+      const inputs = parseTestCaseInputs(tc.input, argNames);
       
-      // Handle vector arguments declarations
+      // Generate unique variable names for each test case
       let decls = '';
+      let argsList = [];
+      
       inputs.forEach((v, i) => {
-        const t = inputTypes[argNames[i]];
-        if (/\bvector\b|\[\]/.test(t)) {
-          const elemType = typeof parseInputValue(v, t)[0] === 'number' ? 'int' : 'string';
-          decls += `    vector<${elemType}> ${argNames[i]} = ${formatted[i]};\n`;
+        const argType = inputTypes[argNames[i]];
+        const parsedValue = parseInputValue(v, argType);
+        
+        if (/\bvector\b|\[\]/.test(argType)) {
+          const elemType = /int|number/.test(argType) ? 'int' : 'string';
+          const varName = `${argNames[i]}_${idx}`;
+          decls += `    vector<${elemType}> ${varName} = ${formatArg(parsedValue, argType, lang)};\n`;
+          argsList.push(varName);
+        } else {
+          argsList.push(formatArg(parsedValue, argType, lang));
         }
       });
       
-      const argsList = inputs.map((_, i) =>
-        /\bvector\b|\[\]/.test(inputTypes[argNames[i]]) ? argNames[i] : formatted[i]
-      ).join(', ');
+      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
       
       harness += `
     ${decls}
     try {
-        auto result = ${funcName}(${argsList});
+        auto result = ${funcName}(${argsList.join(', ')});
         cout << "Case ${idx+1}: " << (result == ${expected} ? "PASS" : "FAIL")
              << " | Expected: ${tc.expectedOutput} | Output: " << result << endl;
     } catch (const exception& e) {
@@ -504,7 +541,6 @@ if (lang === 'java') {
     });
     harness += `}\n\n`;
     
-    // Add main function
     harness += `int main() {
     runTests();
     return 0;
@@ -534,16 +570,16 @@ async function runCode() {
     let fullCode;
     
     if (lang === 'java') {
-  let imports = 'import java.util.*;\n';
-  imports += 'import java.math.*;\n';   
-  
-  fullCode = `${imports}
+      let imports = 'import java.util.*;\n';
+      imports += 'import java.math.*;\n';   
+      
+      fullCode = `${imports}
 public class Solution {
     ${code}
 ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}
 }`;
-} else if (lang === 'cpp') {
-  fullCode = `#include <iostream>
+    } else if (lang === 'cpp') {
+      fullCode = `#include <iostream>
 #include <vector>
 #include <string>
 #include <stack>
@@ -560,7 +596,7 @@ using namespace std;
 
 ${code}
 ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
-} else {
+    } else {
       fullCode = code + generateTestHarness(lang, funcName, testCases, inputTypes, returnType);
     }
 
@@ -627,17 +663,16 @@ ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
       outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
     }
 
-    // Final status summary
     const allPassed = passed === testCases.length;
 
     document.getElementById('output').innerHTML = outputHTML || "<pre>No output</pre>";
 
     won = allPassed;
 
-  socket.emit('testCaseUpdate', {
-      passed: passed,
-      total: testCases.length
-  });
+    socket.emit('testCaseUpdate', {
+        passed: passed,
+        total: testCases.length
+    });
 
   } catch (error) {
     document.getElementById('status').innerHTML = 
