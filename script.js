@@ -262,7 +262,6 @@ function normalizeOutput(output, expectedType) {
 // Generate argument list for function call in each language
 function formatArg(val, type, lang) {
   const isList = /\[\]|\bList\b|\bvector\b/.test(type);
-  const isPrimitive = typeof val[0] === 'number' || typeof val[0] === 'boolean';
 
   if (isList) {
     let elems = val.map(v => {
@@ -276,23 +275,32 @@ function formatArg(val, type, lang) {
 
     if (lang === 'java') {
       if (/\[\]$/.test(type)) {
-        // For primitive arrays
-        if (typeof val[0] === 'number') return `new int[]{${elems}}`;
-        if (typeof val[0] === 'string') return `new String[]{${elems}}`;
-        if (typeof val[0] === 'boolean') return `new boolean[]{${elems}}`;
+        // For primitive arrays - determine type from actual values
+        if (typeof val[0] === 'number' || /int/.test(type)) {
+          return `new int[]{${elems}}`;
+        }
+        if (typeof val[0] === 'boolean' || /bool/.test(type)) {
+          return `new boolean[]{${elems}}`;
+        }
+        if (typeof val[0] === 'string' || /String/.test(type)) {
+          return `new String[]{${elems}}`;
+        }
+        // Default to int[] if unclear
+        return `new int[]{${elems}}`;
       } else {
         // For List<T>
-        const generic = typeof val[0] === 'number' ? 'Integer' : typeof val[0] === 'boolean' ? 'Boolean' : 'String';
+        const generic = typeof val[0] === 'number' ? 'Integer' : 
+                       typeof val[0] === 'boolean' ? 'Boolean' : 'String';
         return `Arrays.asList(${elems})`;
       }
     }
- if (lang === 'cpp') {
+
+    if (lang === 'cpp') {
       const T = typeof val[0] === 'number' ? 'int' :
                 typeof val[0] === 'boolean' ? 'bool' : 'string';
-      return `std::vector<${T}> vec = {${elems}};`; //vec${index} ADD THIS LATER FOR MUTLIPLE ARRAY INPUTS
+      return `std::vector<${T}> vec = {${elems}};`;
     }
-}
-
+  }
 
   // Single values
   if (typeof val === 'string') return `"${val.replace(/"/g, '\\"')}"`;
@@ -385,59 +393,75 @@ testCases.forEach(({ inputs, expected }, idx) => {
   }
   
   // --- JAVA ---
-  if (lang === 'java') {
-    // Fix: Ensure the Java harness contains the complete class structure
-    let importLine = '';
-    if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
-      importLine = 'import java.util.*;';
-    }
+if (lang === 'java') {
+  let importLine = '';
+  if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
+    importLine = 'import java.util.*;';
+  }
+  
+  let harness = `\n${importLine}\n// === Test Harness ===\n`;
+  harness += `    public static void runTests() {\n`;
+  
+  testCases.forEach((tc, idx) => {
+    // Split input by lines, but handle multi-line inputs properly
+    const inputLines = tc.input.split('\n').map(l => l.trim()).filter(Boolean);
     
-    // Start with import and class definition
-    let harness = `\n${importLine}\n// === Test Harness ===\n`;
-    
-    // Add test cases as class methods
-    harness += `    public static void runTests() {\n`;
-    testCases.forEach((tc, idx) => {
-      const inputs = parseInputs(tc.input);
-      const formatted = inputs.map((v, i) =>
-        formatArg(parseInputValue(v, inputTypes[argNames[i]]),
-                 inputTypes[argNames[i]], lang));
-      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType),
-                                returnType, lang);
+    // Map each input line to its corresponding argument
+    const formatted = argNames.map((argName, i) => {
+      const inputValue = inputLines[i] || '';
+      const argType = inputTypes[argName];
       
-      harness += `
+      // Parse the input value according to its type
+      let parsedValue;
+      if (argType.includes('[]') || argType.includes('List')) {
+        // Handle array/list input - remove brackets and split
+        const cleanInput = inputValue.replace(/^\[|\]$/g, '');
+        parsedValue = cleanInput.split(',').map(v => {
+          const trimmed = v.trim();
+          return isNaN(trimmed) ? trimmed.replace(/['"]/g, '') : Number(trimmed);
+        });
+      } else {
+        // Handle single value
+        parsedValue = isNaN(inputValue) ? inputValue : Number(inputValue);
+      }
+      
+      return formatArg(parsedValue, argType, lang);
+    });
+    
+    const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
+    
+    harness += `
         try {
             Object result = ${funcName}(${formatted.join(', ')});
             boolean passed = `;
-      
-      // Handle comparison based on return type
-      if (returnType === 'bool' || returnType === 'boolean') {
-        harness += `result.equals(${expected})`;
-      } else if (returnType === 'int' || returnType === 'number') {
-        harness += `result.equals(${expected})`;
-      } else if (returnType.includes('List') || returnType.includes('[]')) {
-        harness += `result.toString().equals(${expected}.toString())`;
-      } else {
-        harness += `result.equals(${expected})`;
-      }
-      
-      harness += `; 
+    
+    // Handle comparison based on return type
+    if (returnType === 'bool' || returnType === 'boolean') {
+      harness += `result.equals(${expected})`;
+    } else if (returnType === 'int' || returnType === 'number') {
+      harness += `result.equals(${expected})`;
+    } else if (returnType.includes('List') || returnType.includes('[]')) {
+      harness += `java.util.Arrays.equals((int[])result, ${expected})`;
+    } else {
+      harness += `result.equals(${expected})`;
+    }
+    
+    harness += `; 
             System.out.println("Case ${idx+1}: " + (passed ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + result);
         } catch (Exception e) {
             System.err.println("Case ${idx+1}: ERROR | " + e.getMessage());
         }
     `;
-    });
-    harness += `    }\n`;
-    
-    // Add main method
-    harness += `
+  });
+  
+  harness += `    }\n`;
+  harness += `
     public static void main(String[] args) {
         runTests();
     }`;
-    
-    return harness;
-  }
+  
+  return harness;
+}
 
   // --- C++ ---
   if (lang === 'cpp') {

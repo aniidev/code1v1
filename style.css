@@ -91,6 +91,11 @@ body {
   font-size: 0.9rem;
 }
 
+.nav:hover, nav:focus
+{
+  color: #14e061;
+}
+
 .actions {
   display: flex;
   gap: 1rem;

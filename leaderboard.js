@@ -2,7 +2,11 @@ import { collection, query, getDocs } from "https://esm.sh/firebase/firestore";
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged } from "https://esm.sh/firebase/auth";
 
-// Fetch all users (no ordering here, we sort in JS)
+let currentPage = 1;
+const usersPerPage = 10;
+let globalUsers = [];
+
+
 async function fetchLeaderboard() {
   const usersRef = collection(db, "users");
   const snapshot = await getDocs(usersRef);
@@ -11,7 +15,7 @@ async function fetchLeaderboard() {
   return users;
 }
 
-// Calculate win rate for each user (to sort by)
+
 function getWinRate(user) {
   if (user.totalMatches && user.wins) {
     return user.wins / user.totalMatches;
@@ -19,11 +23,17 @@ function getWinRate(user) {
   return 0;
 }
 
-// Render leaderboard rows and highlight the current user
-function renderLeaderboard(users, currentUid) {
+
+function renderLeaderboard(users, currentUid, page = 1) {
   const tbody = document.querySelector('.leaderboard-table tbody');
   tbody.innerHTML = "";
-  users.forEach((user, idx) => {
+
+  const start = (page - 1) * usersPerPage;
+  const end = start + usersPerPage;
+  const pageUsers = users.slice(start, end);
+
+  pageUsers.forEach((user, idx) => {
+    const overallIndex = start + idx;
     const initials = user.username
       ? user.username.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : "??";
@@ -32,7 +42,7 @@ function renderLeaderboard(users, currentUid) {
     const tr = document.createElement('tr');
     if (isCurrentUser) tr.classList.add("your-rank-highlight");
     tr.innerHTML = `
-      <td class="rank${idx < 3 ? ' top-rank' : ''}">${idx + 1}</td>
+      <td class="rank${overallIndex < 3 ? ' top-rank' : ''}">${overallIndex + 1}</td>
       <td>
         <div class="player-info">
           <div class="player-avatar">${initials}</div>
@@ -53,9 +63,11 @@ function renderLeaderboard(users, currentUid) {
     `;
     tbody.appendChild(tr);
   });
+
+  updatePagination(users.length);
 }
 
-// Update "Your Rank" and "Your Elo"
+
 function updateYourStats(users, currentUid) {
   const yourRankElem = document.getElementById('your-rank');
   const yourEloElem = document.getElementById('your-elo');
@@ -77,25 +89,27 @@ function calculateTopPercent(rank, totalUsers) {
   return `Top ${(rank / totalUsers * 100).toFixed(2)}%`;
 }
 
-// Main function to fetch, sort and render
+
 async function loadAndRenderLeaderboard(sortBy = "elo") {
   const users = await fetchLeaderboard();
 
-  // Sort users based on selected criteria
   users.sort((a, b) => {
     if (sortBy === "totalMatches") {
       return (b.totalMatches ?? 0) - (a.totalMatches ?? 0);
     } else if (sortBy === "winRate") {
       return getWinRate(b) - getWinRate(a);
-    } else { // default Elo
+    } else {
       return (b.elo ?? 0) - (a.elo ?? 0);
     }
   });
 
+  globalUsers = users;
+  currentPage = 1;
   const currentUser = auth.currentUser;
-  renderLeaderboard(users, currentUser?.uid);
-  updateYourStats(users, currentUser?.uid);
+  renderLeaderboard(globalUsers, currentUser?.uid, currentPage);
+  updateYourStats(globalUsers, currentUser?.uid);
 }
+
 
 // Wait for auth, then initial load + set up filter listener
 onAuthStateChanged(auth, user => {
@@ -109,3 +123,33 @@ onAuthStateChanged(auth, user => {
   // Initial load with default sort by elo
   loadAndRenderLeaderboard(categoryFilter.value);
 });
+
+function updatePagination(totalUsers) {
+  const pagination = document.querySelector('.pagination');
+  pagination.innerHTML = "";
+
+  const totalPages = Math.ceil(totalUsers / usersPerPage);
+
+  const createButton = (label, page) => {
+    const button = document.createElement('button');
+    button.textContent = label;
+    if (page === currentPage) {
+      button.classList.add('active');
+    }
+    button.addEventListener('click', () => {
+      if (page >= 1 && page <= totalPages && page !== currentPage) {
+        currentPage = page;
+        renderLeaderboard(globalUsers, auth.currentUser?.uid, currentPage);
+      }
+    });
+    return button;
+  };
+
+  pagination.appendChild(createButton('<', currentPage - 1));
+
+  for (let i = 1; i <= totalPages; i++) {
+    pagination.appendChild(createButton(i, i));
+  }
+
+  pagination.appendChild(createButton('>', currentPage + 1));
+}

@@ -59,10 +59,13 @@ socket.on('joinRoom', async (incoming) => {
 
   // Passed validation
   socket.join(room);
-  if (!rooms[room]) rooms[room] = [];
+  if (!rooms[room]) 
+  {
+    rooms[room] = [];
+    rooms[room].gameOver = false;
+  }
   rooms[room].push(socket.id);
 
-  // Ready to start game?
   if (rooms[room].length === 2) {
     const [id1, id2] = rooms[room];
     const socket1 = io.sockets.sockets.get(id1);
@@ -126,6 +129,7 @@ socket.on('joinRoom', async (incoming) => {
 
     const roomCode = Math.random().toString(36).substring(2, 5).toUpperCase();
     rooms[roomCode] = [player1.id, player2.id];
+    rooms[roomCode].gameOver = false;
 
     player1.join(roomCode);
     player2.join(roomCode);
@@ -228,11 +232,13 @@ socket.on('submitCode', async ({ code, won }) => {
   // Send result and ELO to both clients
   socket.emit('result', 'You won!');
   socket.emit('eloUpdate', { elo: newWinnerElo, change: newWinnerElo - myElo });
-
+  
   if (opponentSocketId) {
     io.to(opponentSocketId).emit('result', 'Opponent AC - You lose');
     io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
   }
+  rooms[room].gameOver = true; 
+
 } else if (myUserId && opponentUserId) {
   socket.emit('result', 'Wrong Answer');
 }
@@ -308,7 +314,7 @@ socket.on("forfeit", async () => {
     const opponentId = rooms[room].find(id => id !== socket.id);
     const opponentSocket = io.sockets.sockets.get(opponentId);
 
-    if (opponentSocket && socket.userId && opponentSocket.userId) {
+    if (opponentSocket && socket.userId && opponentSocket.userId && !rooms[room].gameOver) {
       const myDocRef = db.collection("users").doc(socket.userId);
       const opponentDocRef = db.collection("users").doc(opponentSocket.userId);
 
