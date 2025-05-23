@@ -1,9 +1,8 @@
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://esm.sh/firebase/auth";
-import { doc, setDoc, getDoc, collection, query, orderBy, getDocs } from "https://esm.sh/firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, orderBy, getDocs, where } from "https://esm.sh/firebase/firestore";
 import { auth, db } from "./firebase.js";
 import { signOut } from "https://esm.sh/firebase/auth";
 import { GoogleAuthProvider, signInWithPopup } from "https://esm.sh/firebase/auth";
-
 export async function register(email, password, username) {
   try {
     // Create the user account
@@ -38,21 +37,36 @@ export async function register(email, password, username) {
   }
 }
 
-export async function login(email, password) {
+export async function login(identifier, password) {
   try {
+    let email = identifier;
+
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+
+    if (!isEmail) {
+      const q = query(collection(db, "users"), where("username", "==", identifier));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        throw new Error("Username not found");
+      }
+
+      const userData = querySnapshot.docs[0].data();
+      email = userData.email;
+    }
+
+    // Proceed with email sign-in
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const uid = userCredential.user.uid;
+
     const userDoc = await getDoc(doc(db, "users", uid));
-    
     if (userDoc.exists()) {
       const userData = {
         uid,
         ...userDoc.data()
       };
-      
-      // Save user data to localStorage
+
       localStorage.setItem("userData", JSON.stringify(userData));
-      
       return userData;
     } else {
       throw new Error("User data not found");
