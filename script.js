@@ -14,11 +14,17 @@ let userPassed = 0;
 if (userData) {
   document.getElementById("userHeader").textContent =
     `${userData.username}`;
+        document.getElementById('signUpBtn').style.display = 'none';
+    document.getElementById('logInBtn').style.display = 'none';
+    document.getElementById('logOutBtn').style.display = 'block';
 }
 else
 {
   document.getElementById("userHeader").textContent =
     ``;
+          document.getElementById('signUpBtn').style.display = 'block';
+      document.getElementById('logInBtn').style.display = 'block';
+      document.getElementById('logOutBtn').style.display = 'none';
 }
 
 
@@ -48,13 +54,9 @@ window.addEventListener('DOMContentLoaded', () => {
   const userData = JSON.parse(localStorage.getItem("userData"));
   if (userData && userData.uid) {
     socket.emit('registerUser', { userId: userData.uid });
-    document.getElementById('signUpBtn').style.display = 'none';
-    document.getElementById('logInBtn').style.display = 'none';
-    document.getElementById('logOutBtn').style.display = 'block';
+
   } else {
-      document.getElementById('signUpBtn').style.display = 'block';
-      document.getElementById('logInBtn').style.display = 'block';
-      document.getElementById('logOutBtn').style.display = 'none';
+
   }
 });
 

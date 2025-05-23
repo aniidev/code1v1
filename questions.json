@@ -412,5 +412,243 @@
     }
   },
   "output": "int"
-}
+},
+  {
+    "id": 8,
+    "title": "Climbing Stairs",
+    "difficulty": "Easy",
+    "description": "You are climbing a staircase. It takes n steps to reach the top. Each time you can climb either 1 or 2 steps. In how many distinct ways can you climb to the top?",
+    "examples": [
+      {
+        "input": "n = 2",
+        "output": "2"
+      },
+      {
+        "input": "n = 3",
+        "output": "3"
+      }
+    ],
+    "testCases": [
+      {
+        "input": "2",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "3",
+        "expectedOutput": "3"
+      },
+      {
+        "input": "1",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "5",
+        "expectedOutput": "8"
+      },
+      {
+        "input": "10",
+        "expectedOutput": "89"
+      }
+    ],
+    "functionName": "climbStairs",
+    "inputs": {
+      "python": {
+        "n": "int"
+      },
+      "cpp": {
+        "n": "int"
+      },
+      "java": {
+        "n": "int"
+      },
+      "javascript": {
+        "n": "number"
+      }
+    },
+    "output": "int"
+  },
+  {
+    "id": 9,
+    "title": "Best Time to Buy and Sell Stock",
+    "difficulty": "Easy",
+    "description": "You are given an array prices where prices[i] is the price of a given stock on the i th day. You want to maximize your profit by choosing a single day to buy and a different day in the future to sell. Return the maximum profit you can achieve. If you cannot achieve any profit, return 0.",
+    "examples": [
+      {
+        "input": "prices = [7,1,5,3,6,4]",
+        "output": "5"
+      },
+      {
+        "input": "prices = [7,6,4,3,1]",
+        "output": "0"
+      }
+    ],
+    "testCases": [
+      {
+        "input": "[7,1,5,3,6,4]",
+        "expectedOutput": "5"
+      },
+      {
+        "input": "[7,6,4,3,1]",
+        "expectedOutput": "0"
+      },
+      {
+        "input": "[1,2]",
+        "expectedOutput": "1"
+      },
+      {
+        "input": "[2,4,1]",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "[3,3,5,0,0,3,1,4]",
+        "expectedOutput": "4"
+      }
+    ],
+    "functionName": "maxProfit",
+    "inputs": {
+      "python": {
+        "prices": "List[int]"
+      },
+      "cpp": {
+        "prices": "vector<int>"
+      },
+      "java": {
+        "prices": "int[]"
+      },
+      "javascript": {
+        "prices": "number[]"
+      }
+    },
+    "output": "int"
+  },
+  {
+    "id": 10,
+    "title": "Missing Number",
+    "difficulty": "Easy",
+    "description": "Given an array nums containing n distinct numbers in the range [0, n], return the only number in the range that is missing from the array.",
+    "examples": [
+      {
+        "input": "nums = [3,0,1]",
+        "output": "2"
+      },
+      {
+        "input": "nums = [0,1]",
+        "output": "2"
+      }
+    ],
+    "testCases": [
+      {
+        "input": "[3,0,1]",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "[0,1]",
+        "expectedOutput": "2"
+      },
+      {
+        "input": "[9,6,4,2,3,5,7,0,1]",
+        "expectedOutput": "8"
+      },
+      {
+        "input": "[0]",
+        "expectedOutput": "1"
+      }
+    ],
+    "functionName": "missingNumber",
+    "inputs": {
+      "python": {
+        "nums": "List[int]"
+      },
+      "cpp": {
+        "nums": "vector<int>"
+      },
+      "java": {
+        "nums": "int[]"
+      },
+      "javascript": {
+        "nums": "number[]"
+      }
+    },
+    "output": "int"
+  },
+   {
+    "id": 11,
+    "title": "Top K Frequent Elements",
+    "difficulty": "Medium",
+    "description": "Given an integer array nums and an integer k, return the k most frequent elements. You may return the answer in any order.",
+    "examples": [
+      {
+        "input": "nums = [1,1,1,2,2,3], k = 2",
+        "output": "[1,2]"
+      },
+      {
+        "input": "nums = [1], k = 1",
+        "output": "[1]"
+      }
+    ],
+    "testCases": [
+      {
+        "input": "[1,1,1,2,2,3], 2",
+        "expectedOutput": "[1,2]"
+      },
+      {
+        "input": "[1], 1",
+        "expectedOutput": "[1]"
+      },
+      {
+        "input": "[4,1,-1,2,-1,2,3], 2",
+        "expectedOutput": "[-1,2]"
+      }
+    ],
+    "functionName": "topKFrequent",
+    "inputs": {
+      "python": { "nums": "List[int]", "k": "int" },
+      "cpp": { "nums": "vector<int>", "k": "int" },
+      "java": { "nums": "int[]", "k": "int" },
+      "javascript": { "nums": "number[]", "k": "number" }
+    },
+    "output": "List[int]"
+  },
+  {
+    "id": 12,
+    "title": "Product of Array Except Self",
+    "difficulty": "Medium",
+    "description": "Given an array nums of n integers where n > 1, return an array answer such that answer[i] is the product of all the elements of nums except nums[i]. Solve it in O(n) time without using division.",
+    "examples": [
+      {
+        "input": "nums = [1,2,3,4]",
+        "output": "[24,12,8,6]"
+      },
+      {
+        "input": "nums = [-1,1,0,-3,3]",
+        "output": "[0,0,9,0,0]"
+      }
+    ],
+    "testCases": [
+      {
+        "input": "[1,2,3,4]",
+        "expectedOutput": "[24,12,8,6]"
+      },
+      {
+        "input": "[-1,1,0,-3,3]",
+        "expectedOutput": "[0,0,9,0,0]"
+      },
+      {
+        "input": "[2,3,0,4]",
+        "expectedOutput": "[0,0,24,0]"
+      },
+      {
+        "input": "[5,6,7,8,9]",
+        "expectedOutput": "[3024,2520,2160,1890,1680]"
+      }
+    ],
+    "functionName": "productExceptSelf",
+    "inputs": {
+      "python": { "nums": "List[int]" },
+      "cpp": { "nums": "vector<int>" },
+      "java": { "nums": "int[]" },
+      "javascript": { "nums": "number[]" }
+    },
+    "output": "List[int]"
+  }
 ]

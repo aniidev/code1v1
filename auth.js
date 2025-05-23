@@ -55,7 +55,6 @@ export async function login(identifier, password) {
       email = userData.email;
     }
 
-    // Proceed with email sign-in
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const uid = userCredential.user.uid;
 
