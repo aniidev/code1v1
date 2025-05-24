@@ -52,14 +52,14 @@
     <div>Room Code: <span id="waitingRoomCode">ABCD1234</span></div>
   </div>      
 
-  <div id="publicWaiting" class="container" style="display:none;">     
-    <h2></h2>
-    <p>Finding an opponent...</p>
-    <div class="loading-indicator">
-      <div class="loading-spinner"></div>
+<div id="publicWaiting" class="container" style="display: none;">
+  <div class="finding-opponent-row">
+    <p>Finding an opponent</p>
+    <div class="ellipsis-loader">
+      <span>.</span><span>.</span><span>.</span>
     </div>
-  </div>      
-
+  </div>
+</div>
   <!-- VS Screen with improved visuals -->   
   <div id="vsScreen" class="container">    
     <div class="logo"></div> 
@@ -143,6 +143,7 @@
   </div>
   
   <div id="endScreen" style="display: none">
+    <canvas id="confetti-canvas"></canvas>
   <div class="container end-container">
     <div class="end-icon-wrapper">
       <i id="endIcon" class="fa-solid fa-trophy"></i>

@@ -362,13 +362,13 @@ socket.on("forfeit", async () => {
         });
 
         // Notify both players
-        opponentSocket.emit('result', 'Opponent forfeited - You win!');
+        opponentSocket.emit('result', 'Opponent Forfeit');
         opponentSocket.emit('eloUpdate', {
           elo: newWinnerElo,
           change: opponentEloChange
         });
 
-        socket.emit('result', 'You forfeited - You lose!');
+        socket.emit('result', 'Forfeit');
         socket.emit('eloUpdate', {
           elo: newLoserElo,
           change: myEloChange

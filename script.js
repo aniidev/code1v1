@@ -40,7 +40,7 @@ socket.on('playerInfo', ({ self, opponent, selfElo, opponentElo }) => {
 socket.on('registerUser', async ({ userId }) => {
   socket.userId = userId;
     if (!userId) {
-    console.error('registerUser: userId is missing or empty!');
+    console.error('registerUser: userId is missing or empty.');
     return;
   }
   const userDoc = await db.collection("users").doc(userId).get();
@@ -83,7 +83,7 @@ function joinRoom() {
   if (userData) {
     const room = document.getElementById('roomInput').value.toUpperCase().trim();
     if (room.length !== 3) {
-      alert('Room code must be 3 characters!');
+      alert('Room code must be 3 characters.');
       return;
     }
     socket.emit('joinRoom', {
@@ -155,6 +155,8 @@ function submitCode(timerEnd) {
 
 
 socket.on('result', (msg) => {
+  if(msg !== "Wrong Answer")
+  {
   console.log('Received result:', msg);
   window.removeEventListener('beforeunload', confirmBeforeUnload);
   document.getElementById('game').style.display = 'none';
@@ -166,16 +168,16 @@ socket.on('result', (msg) => {
   let statusText = msg;
   let statusColor = '#16f66b';
 
-  if (msg === "You won!" || msg === "You Won!") {
+  if (msg === "You won!" || msg === "You Won!" || msg === "Opponent Forfeit") {
+    startConfetti();
     iconClass = 'fa-trophy';
     iconColor = '#ffffff';
     statusColor = '#16f66b';
-  } else if (msg === "Opponent AC - You lose" || msg.toLowerCase().includes("lose")) {
+  } else if (msg === "Opponent AC - You lose" || msg.toLowerCase().includes("lose") || msg === "Forfeit") {
     iconClass = 'fa-handshake';
     iconColor = '#ffffff';
     statusColor = '#ff4d4d';
-  } else if (msg === "Wrong Answer") {
-    //remove time or something
+
   }
   const iconElem = document.getElementById('endIcon');
   iconElem.className = `fa-solid ${iconClass}`;
@@ -184,6 +186,7 @@ socket.on('result', (msg) => {
   const statusElem = document.getElementById('end-status');
   statusElem.innerText = statusText;
   statusElem.style.color = statusColor;
+}
 });
 
 socket.on('connect_error', (err) => {
@@ -201,36 +204,39 @@ socket.on('eloUpdate', ({ elo, change }) => {
   const eloValueElem = document.getElementById('elo-value');
   const eloChangeElem = document.getElementById('elo-change');
 
-  const start = parseInt(eloValueElem.textContent);
   const end = elo;
-  const duration = 1750; // animation duration in ms
+  const start = elo - change; 
+
+  const duration = 2000;
   const frameRate = 60;
   const totalFrames = Math.round((duration / 1000) * frameRate);
-  const increment = (end - start) / totalFrames;
-  let current = start;
+  const diff = end - start;
+
   let frame = 0;
 
-  // Animate elo increment
   const animate = () => {
     frame++;
-    current += increment;
+    const progress = frame / totalFrames;
+    const easedProgress = 1 - Math.pow(1 - progress, 3);
+    const next = Math.round(start + diff * easedProgress);
+
+    eloValueElem.textContent = next;
+
     if (frame < totalFrames) {
-      eloValueElem.textContent = Math.round(current);
       requestAnimationFrame(animate);
     } else {
       eloValueElem.textContent = end;
     }
   };
+
   animate();
 
   eloChangeElem.style.color = change > 0 ? 'green' : 'red';
   eloChangeElem.textContent = (change > 0 ? '+' : '') + change;
 
-  // Update local storage
   userData.elo = elo;
   localStorage.setItem("userData", JSON.stringify(userData));
 });
-
 function findPublicMatch() {
   if(userData)
   {
@@ -246,7 +252,7 @@ function findPublicMatch() {
 }
 
 socket.on('waitingForOpponent', () => {
-  document.getElementById('publicWaiting').innerText = 'Finding an opponent...';
+
 });
 
 
@@ -271,7 +277,7 @@ function startGameTimer() {
 
     if (totalSeconds <= 0) {
       clearInterval(gameTimerInterval);
-      timerElem.innerText = "Time's up!";
+      timerElem.innerText = "Time's up";
       submitCode(true);
     }
     else if(totalSeconds <=  60)
@@ -905,4 +911,62 @@ function updateOpponentCases(passed, total) {
 function confirmBeforeUnload(e) {
   e.preventDefault();
   e.returnValue = ''; 
+}
+
+function startConfetti() {
+  console.log("startConfeteti")
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const confettiCount = 80;
+  const confetti = [];
+
+  for (let i = 0; i < confettiCount; i++) {
+    confetti.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      r: Math.random() * 6 + 4,
+      d: Math.random() * confettiCount,
+      color: `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`,
+      tilt: Math.random() * 10 - 10,
+      tiltAngleIncremental: Math.random() * 0.07 + 0.05,
+      tiltAngle: 0
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confetti.forEach(c => {
+      ctx.beginPath();
+      ctx.lineWidth = c.r / 2;
+      ctx.strokeStyle = c.color;
+      ctx.moveTo(c.x + c.tilt + c.r / 4, c.y);
+      ctx.lineTo(c.x + c.tilt, c.y + c.tilt + c.r / 4);
+      ctx.stroke();
+    });
+
+    update();
+  }
+
+ function update() {
+  confetti.forEach((c, i) => {  
+    c.tiltAngle += c.tiltAngleIncremental;
+    c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
+    c.tilt = Math.sin(c.tiltAngle - i) * 15;
+
+    if (c.y > canvas.height) {
+      c.y = -20;
+      c.x = Math.random() * canvas.width;
+    }
+  });
+}
+
+  function loop() {
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
 }
