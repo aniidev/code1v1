@@ -196,8 +196,8 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
     const myData = myDoc.data();
 
     const myElo = myData.elo;
-    const [newWinnerElo, newLoserElo] = updateElo(myElo, myElo);
-
+    let [newWinnerElo, newLoserElo] = updateElo(myElo, 1100);
+    newLoserElo /= 1.25;
     await myDocRef.update({
       elo: newLoserElo,
       totalMatches: (myData.totalMatches || 0) + 1
@@ -412,7 +412,7 @@ server.listen(3000, () => {
 });
 
 function updateElo(winnerElo, loserElo) {
-  const k = 100;
+  const k = 64;
   const expectedWin = 1 / (1 + 10 ** ((loserElo - winnerElo) / 400));
   const newWinnerElo = Math.ceil(winnerElo + k * (1 - expectedWin));
   const newLoserElo = Math.ceil(loserElo + k * (0 - (1 - expectedWin)));

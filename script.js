@@ -198,12 +198,37 @@ socket.on('invalidRoom', (msg) => {
 });
 
 socket.on('eloUpdate', ({ elo, change }) => {
-  document.getElementById('elo-value').textContent = elo;
-  userData.elo = elo;
-  localStorage.setItem("userData", JSON.stringify(userData));
+  const eloValueElem = document.getElementById('elo-value');
   const eloChangeElem = document.getElementById('elo-change');
+
+  const start = parseInt(eloValueElem.textContent);
+  const end = elo;
+  const duration = 1750; // animation duration in ms
+  const frameRate = 60;
+  const totalFrames = Math.round((duration / 1000) * frameRate);
+  const increment = (end - start) / totalFrames;
+  let current = start;
+  let frame = 0;
+
+  // Animate elo increment
+  const animate = () => {
+    frame++;
+    current += increment;
+    if (frame < totalFrames) {
+      eloValueElem.textContent = Math.round(current);
+      requestAnimationFrame(animate);
+    } else {
+      eloValueElem.textContent = end;
+    }
+  };
+  animate();
+
   eloChangeElem.style.color = change > 0 ? 'green' : 'red';
   eloChangeElem.textContent = (change > 0 ? '+' : '') + change;
+
+  // Update local storage
+  userData.elo = elo;
+  localStorage.setItem("userData", JSON.stringify(userData));
 });
 
 function findPublicMatch() {
@@ -236,7 +261,7 @@ function returnLobby()
     
 }
 function startGameTimer() {
-  let totalSeconds = 1 * 60; // 15 minutes in seconds
+  let totalSeconds = 15 * 60; // 15 minutes 
   const timerElem = document.getElementById('timer');
   updateTimerDisplay(totalSeconds, timerElem);
 
@@ -586,7 +611,7 @@ async function runCode() {
     const testCases = currentQuestion.testCases || [];
     const inputTypes = currentQuestion.inputs?.[lang] || {};
     const funcName = currentQuestion.functionName;
-    const returnType = currentQuestion.output || '';
+    const returnType = getReturnType(lang, currentQuestion.output);
 
     let fullCode;
     
