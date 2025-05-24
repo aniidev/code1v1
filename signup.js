@@ -17,16 +17,12 @@ document.querySelector("form").addEventListener("submit", async (event) => {
   }
   
   try {
-    // Show loading message
     document.getElementById('status').innerHTML = "Creating your account...";
     
-    // Register the user
     const userData = await register(email, password, username);
     
-    // Success message
     document.getElementById('status').innerHTML = "Registration successful! Redirecting to homepage...";
-    
-    // Redirect to index page after a short delay
+
     setTimeout(() => {
       window.location.href = "index.html";
     }, 1000);

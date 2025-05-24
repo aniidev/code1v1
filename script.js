@@ -156,18 +156,34 @@ function submitCode() {
 
 socket.on('result', (msg) => {
   console.log('Received result:', msg);
-  if(msg === "Wrong Answer")
-  {
-    //add some msg later 
+  window.removeEventListener('beforeunload', confirmBeforeUnload);
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'block';
+
+
+  let iconClass = 'fa-trophy';
+  let iconColor = '#1ffffff';
+  let statusText = msg;
+  let statusColor = '#16f66b';
+
+  if (msg === "You won!" || msg === "You Won!") {
+    iconClass = 'fa-trophy';
+    iconColor = '#ffffff';
+    statusColor = '#16f66b';
+  } else if (msg === "Opponent AC - You lose" || msg.toLowerCase().includes("lose")) {
+    iconClass = 'fa-handshake';
+    iconColor = '#ffffff';
+    statusColor = '#ffffff';
+  } else if (msg === "Wrong Answer") {
+    //remove time or something
   }
-  else
-  {
-    window.removeEventListener('beforeunload', confirmBeforeUnload);
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('endScreen').style.display = 'block';
-    document.getElementById('end-status').innerText = msg;
-  }
-    
+  const iconElem = document.getElementById('endIcon');
+  iconElem.className = `fa-solid ${iconClass}`;
+  iconElem.style.color = iconColor;
+
+  const statusElem = document.getElementById('end-status');
+  statusElem.innerText = statusText;
+  statusElem.style.color = statusColor;
 });
 
 socket.on('connect_error', (err) => {
@@ -696,14 +712,9 @@ function setLanguage() {
   const rawSignature = currentQuestion.functionSignatures?.[lang] || '';
   const funcName = currentQuestion.functionName || 'functionName';
   const inputs = currentQuestion.inputs?.[lang] || {};
-  const returnType = currentQuestion.output || '';
   const rawReturn = currentQuestion.output || '';
-  let returnTypeForJava = rawReturn;
-  if (lang === 'java' && (rawReturn === 'bool' || rawReturn === 'boolean')) {
-    returnTypeForJava = 'boolean';
-  }
+  const returnType  = getReturnType(lang, rawReturn);
   let fullTemplate = '';
-
   if (rawSignature) {
     switch (lang) {
       case 'python':
@@ -736,7 +747,7 @@ function setLanguage() {
         fullTemplate = `function ${funcName}(${params}) {\n  // solution here\n}`;
         break;
       case 'java':
-        fullTemplate = `public static ${returnTypeForJava} ${funcName}(${params}) {\n    // solution here\n}`;
+        fullTemplate = `public static ${returnType} ${funcName}(${params}) {\n    // solution here\n}`;
         break;
       case 'cpp':
         fullTemplate = `${returnType} ${funcName}(${params}) {\n    // solution here\n}`;
@@ -748,6 +759,63 @@ function setLanguage() {
 
   monaco.editor.setModelLanguage(editor.getModel(), monacoLang);
   editor.setValue(fullTemplate);
+}
+
+
+function getReturnType(lang, rawReturn) {
+  // Normalize for easier matching
+  const r = rawReturn.trim();
+
+  // Java
+  if (lang === 'java') {
+    if (r === 'int') return 'int';
+    if (r === 'bool' || r === 'boolean') return 'boolean';
+    if (r === 'String' || r === 'str' || r === 'string') return 'String';
+    if (r === 'int[]' || r === 'List[int]') return 'int[]';
+    if (r === 'List<String>' || r === 'string[]' || r === 'List[str]') return 'String[]';
+    if (r === 'List[List[int]]' || r === 'int[][]') return 'int[][]';
+    if (r === 'List[List[String]]' || r === 'string[][]' || r === 'List[List[str]]') return 'String[][]';
+    // Add more as needed
+  }
+
+  // C++
+  if (lang === 'cpp') {
+    if (r === 'int') return 'int';
+    if (r === 'bool' || r === 'boolean') return 'bool';
+    if (r === 'string' || r === 'str' || r === 'String') return 'string';
+    if (r === 'vector<int>' || r === 'int[]' || r === 'List[int]') return 'vector<int>';
+    if (r === 'vector<string>' || r === 'string[]' || r === 'List[str]' || r === 'List[String]') return 'vector<string>';
+    if (r === 'vector<vector<int>>' || r === 'int[][]' || r === 'List[List[int]]') return 'vector<vector<int>>';
+    if (r === 'vector<vector<string>>' || r === 'string[][]' || r === 'List[List[str]]' || r === 'List[List[String]]') return 'vector<vector<string>>';
+    // Add more as needed
+  }
+
+  // Python
+  if (lang === 'python') {
+    if (r === 'int') return 'int';
+    if (r === 'bool' || r === 'boolean') return 'bool';
+    if (r === 'str' || r === 'string' || r === 'String') return 'str';
+    if (r === 'List[int]' || r === 'int[]') return 'List[int]';
+    if (r === 'List[str]' || r === 'string[]' || r === 'List[String]') return 'List[str]';
+    if (r === 'List[List[int]]' || r === 'int[][]') return 'List[List[int]]';
+    if (r === 'List[List[str]]' || r === 'string[][]' || r === 'List[List[String]]') return 'List[List[str]]';
+    // Add more as needed
+  }
+
+  // JavaScript
+  if (lang === 'javascript') {
+    if (r === 'int' || r === 'number') return 'number';
+    if (r === 'bool' || r === 'boolean') return 'boolean';
+    if (r === 'str' || r === 'string' || r === 'String') return 'string';
+    if (r === 'number[]' || r === 'int[]' || r === 'List[int]') return 'number[]';
+    if (r === 'string[]' || r === 'List[str]' || r === 'List[String]') return 'string[]';
+    if (r === 'number[][]' || r === 'int[][]' || r === 'List[List[int]]') return 'number[][]';
+    if (r === 'string[][]' || r === 'List[List[str]]' || r === 'List[List[String]]') return 'string[][]';
+    // Add more as needed
+  }
+
+  // Fallback
+  return rawReturn;
 }
 
 // Utility functions

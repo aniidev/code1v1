@@ -998,3 +998,99 @@ select#languageSelect {
 a {
   color:#b4b4b4;
 }
+
+.end-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: linear-gradient(120deg, #151515 80%, #16f66b10 100%);
+  border-radius: 22px;
+  box-shadow: 0 8px 32px rgba(22,246,107,0.13), 0 2px 20px rgba(0,0,0,0.38);
+  position: relative;
+  min-width: 340px;
+  max-width: 420px;
+  margin: 0 auto;
+  gap: 1.7rem;
+}
+
+.end-icon-wrapper {
+  background: linear-gradient(120deg, #16f66b33 60%, #fff0 100%);
+  border-radius: 50%;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.7rem;
+  box-shadow: 0 0 0 6px rgba(22,246,107,0.08);
+}
+
+#endIcon {
+  color: #16f66b;
+  font-size: 3.2rem;
+  text-shadow: 0 0 30px #16f66b44, 0 0 6px #fff;
+}
+
+.end-status-text {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 18px #16f66b33;
+  margin-bottom: 0.2rem;
+  letter-spacing: 2px;
+}
+
+.score-section {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 1.25rem;
+  background: rgba(22,246,107,0.07);
+  padding: 0.8rem 1.6rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(22,246,107,0.06) inset;
+}
+
+.score-label {
+  font-weight: 600;
+  color: #16f66b;
+}
+
+.score-value {
+  font-weight: 700;
+  color: #fff;
+  font-size: 1.35rem;
+}
+
+.elo-change {
+  font-weight: 700;
+  margin-left: 10px;
+  font-size: 1.1rem;
+}
+
+.end-btn {
+  margin-top: 1.6rem;
+  min-width: 180px;
+  font-size: 1.1rem;
+  border-radius: 50px;
+  border: 2px solid #16f66b;
+  background: linear-gradient(90deg, #16f66b 0%, #0fd850 100%);
+  color: #0a0a0a;
+  box-shadow: 0 6px 18px rgba(22, 246, 107, 0.22);
+  transition: background 0.2s, transform 0.2s;
+}
+.end-btn:hover, .end-btn:focus {
+  background: linear-gradient(90deg, #14e061 0%, #0cb450 100%);
+  transform: translateY(-2px) scale(1.03);
+  color: #fff;
+  border-color: #16f66b;
+}
+
+#end-status {
+  text-align: center;
+  width: 100%;
+  display: block;
+  margin: 0 auto 0.5rem auto;
+}

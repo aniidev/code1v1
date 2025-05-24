@@ -141,16 +141,21 @@
       </div>     
     </div>   
   </div>
+  
   <div id="endScreen" style="display: none">
-    <div class="container">
-      <div id="end-status">You Won!</div>
-      <div id="score">
-        ELO: <span id="elo-value">1500</span>
-        <div id="elo-change" style="color: green;">+20</div>
-      </div>
-      <button onclick="returnLobby()" class="button">Back to Lobby</button>
+  <div class="container end-container">
+    <div class="end-icon-wrapper">
+      <i id="endIcon" class="fa-solid fa-trophy"></i>
     </div>
-  </div>  
+    <div id="end-status" class="end-status-text">You Won!</div>
+    <div id="score" class="score-section">
+      <span class="score-label">ELO:</span>
+      <span id="elo-value" class="score-value">1500</span>
+      <div id="elo-change" class="elo-change" style="color: green;">+20</div>
+    </div>
+    <button onclick="returnLobby()" class="button end-btn">Back to Lobby</button>
+  </div>
+</div>
 
   
   <script src="script.js"></script>
