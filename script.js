@@ -147,10 +147,10 @@ require(['vs/editor/editor.main'], function () {
   });
 });
 
-function submitCode() {
+function submitCode(timerEnd) {
   const code = editor.getValue();
   runCode();
-  socket.emit('submitCode', { room, code, won});
+  socket.emit('submitCode', { room, code, won, timerEnd});
 }
 
 
@@ -173,7 +173,7 @@ socket.on('result', (msg) => {
   } else if (msg === "Opponent AC - You lose" || msg.toLowerCase().includes("lose")) {
     iconClass = 'fa-handshake';
     iconColor = '#ffffff';
-    statusColor = '#ffffff';
+    statusColor = '#ff4d4d';
   } else if (msg === "Wrong Answer") {
     //remove time or something
   }
@@ -236,7 +236,7 @@ function returnLobby()
     
 }
 function startGameTimer() {
-  let totalSeconds = 15 * 60; // 15 minutes in seconds
+  let totalSeconds = 1 * 60; // 15 minutes in seconds
   const timerElem = document.getElementById('timer');
   updateTimerDisplay(totalSeconds, timerElem);
 
@@ -247,7 +247,11 @@ function startGameTimer() {
     if (totalSeconds <= 0) {
       clearInterval(gameTimerInterval);
       timerElem.innerText = "Time's up!";
-      submitCode();
+      submitCode(true);
+    }
+    else if(totalSeconds <=  60)
+    {
+      timerElem.style.color = "#ff4d4d";
     }
   }, 1000);
 }

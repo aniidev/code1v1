@@ -178,7 +178,7 @@ socket.on('joinRoom', async (incoming) => {
 
 
   // CODE SUBMISSION
-socket.on('submitCode', async ({ code, won }) => {
+socket.on('submitCode', async ({ code, won, timerEnd }) => {
   const room = socket.room;
   if (!room || !rooms[room]) return;
 
@@ -187,11 +187,29 @@ socket.on('submitCode', async ({ code, won }) => {
   const opponentIndex = isPlayer1 ? 1 : 0;
   const opponentSocketId = rooms[room][opponentIndex];
 
-  // Get user IDs from your mapping
   const myUserId = socket.userId;
   const opponentUserId = io.sockets.sockets.get(opponentSocketId)?.userId;
 
-  if (won && myUserId && opponentUserId) {
+  if (timerEnd && myUserId && opponentUserId) {
+    const myDocRef = db.collection("users").doc(myUserId);
+    const myDoc = await myDocRef.get();
+    const myData = myDoc.data();
+
+    const myElo = myData.elo;
+    const [newWinnerElo, newLoserElo] = updateElo(myElo, myElo);
+
+    await myDocRef.update({
+      elo: newLoserElo,
+      totalMatches: (myData.totalMatches || 0) + 1
+    });
+
+    socket.emit('result', "Time's up - You lose");
+    socket.emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - myElo});
+
+    rooms[room].gameOver = true;
+    return;
+  }
+  else if (won && myUserId && opponentUserId) {
   // Fetch current ELOs and stats
   const myDocRef = db.collection("users").doc(myUserId);
   const opponentDocRef = db.collection("users").doc(opponentUserId);
