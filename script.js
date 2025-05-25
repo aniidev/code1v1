@@ -10,6 +10,8 @@ let opponentName = "Opponent";
 const userData = JSON.parse(localStorage.getItem("userData"));
 let opponentPassed = 0;
 let userPassed = 0;
+const gameDuration = 15 * 60 * 1000 + 5000; // 15 minutes in ms
+let startTime;
 
 if (userData) {
   document.getElementById("userHeader").textContent =
@@ -98,7 +100,7 @@ function joinRoom() {
 }
 
 
-socket.on('startGame', (question) => {
+socket.on('startGame', ({question, startTime}) => {
   currentQuestion = question;
   document.getElementById('waitingScreen').style.display = 'none';
   document.getElementById('publicWaiting').style.display = 'none';
@@ -116,6 +118,7 @@ socket.on('startGame', (question) => {
       clearInterval(vsInterval);
       document.getElementById('vsScreen').style.display = 'none';
       document.getElementById('game').style.display = 'block';
+      window.scrollTo(0, document.body.scrollHeight);
 
       document.getElementById('questionTitle').innerText = question.title;
       document.getElementById('questionDescription').innerText = question.description;
@@ -128,7 +131,7 @@ socket.on('startGame', (question) => {
       const testCasesHTML = question.testCases.map(
         tc => `<pre><strong>Input:</strong> ${tc.input}\n<strong>Expected Output:</strong> ${tc.expectedOutput}</pre>`
       ).join('');
-      startGameTimer();
+      startGameTimer(startTime);
     }
   }, 1000);
   setLanguage();
@@ -266,25 +269,29 @@ function returnLobby()
   document.getElementById('endScreen').style.display = 'none';
     
 }
-function startGameTimer() {
-  let totalSeconds = 15 * 60; // 15 minutes 
-  const timerElem = document.getElementById('timer');
-  updateTimerDisplay(totalSeconds, timerElem);
+function startGameTimer(serverStartTime) {
+  startTime = serverStartTime;
+  updateTimer();
+  gameTimerInterval = setInterval(updateTimer, 1000);
+}
 
-  gameTimerInterval = setInterval(() => {
-    totalSeconds--;
-    updateTimerDisplay(totalSeconds, timerElem);
+function updateTimer() {
+  const now = Date.now();
+  const elapsed = now - startTime;
+  let remaining = gameDuration - elapsed;
 
-    if (totalSeconds <= 0) {
-      clearInterval(gameTimerInterval);
-      timerElem.innerText = "Time's up";
-      submitCode(true);
-    }
-    else if(totalSeconds <=  60)
-    {
-      timerElem.style.color = "#ff4d4d";
-    }
-  }, 1000);
+  if (remaining <= 0) {
+    clearInterval(gameTimerInterval);
+    document.getElementById('timer').innerText = "Time's up";
+    submitCode(true);
+    return;
+  }
+
+  updateTimerDisplay(Math.floor(remaining / 1000), document.getElementById('timer'));
+
+  if (remaining <= 60000) { // last 60 seconds
+    document.getElementById('timer').style.color = "#ff4d4d";
+  }
 }
 
 function updateTimerDisplay(totalSeconds, elem) {
@@ -914,14 +921,13 @@ function confirmBeforeUnload(e) {
 }
 
 function startConfetti() {
-  console.log("startConfeteti")
   const canvas = document.getElementById('confetti-canvas');
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  const confettiCount = 80;
-  const confetti = [];
+  let confettiCount = 80;
+  let confetti = [];
 
   for (let i = 0; i < confettiCount; i++) {
     confetti.push({
@@ -948,9 +954,11 @@ function startConfetti() {
     });
 
     update();
+    
   }
 
  function update() {
+  
   confetti.forEach((c, i) => {  
     c.tiltAngle += c.tiltAngleIncremental;
     c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
@@ -961,11 +969,13 @@ function startConfetti() {
       c.x = Math.random() * canvas.width;
     }
   });
+  
 }
 
   function loop() {
     draw();
     requestAnimationFrame(loop);
+    
   }
 
   loop();

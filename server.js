@@ -6,6 +6,7 @@ admin.initializeApp({
 });
 
 const { getFirestore, doc, getDoc, updateDoc } = require('firebase-admin/firestore');
+const { Timestamp } = require('firebase-admin/firestore');
 const db = getFirestore();
 
 const express = require('express');
@@ -42,25 +43,21 @@ io.on('connection', socket => {
   // PRIVATE ROOM LOGIC
 socket.on('joinRoom', async (incoming) => {
   const room = incoming.room.toUpperCase();
-  const joinType = incoming.type; // 'join' or 'create'
+  const joinType = incoming.type;
   socket.room = room;
 
-  // Room is full
   if (rooms[room] && rooms[room].length >= 2) {
     socket.emit('invalidRoom', 'Room is full or unavailable.');
     return;
   }
 
-  // Room doesn't exist and user is trying to join (not create)
   if (!rooms[room] && joinType === 'join') {
     socket.emit('invalidRoom', 'Room does not exist.');
     return;
   }
 
-  // Passed validation
   socket.join(room);
-  if (!rooms[room]) 
-  {
+  if (!rooms[room]) {
     rooms[room] = [];
     rooms[room].gameOver = false;
   }
@@ -109,18 +106,28 @@ socket.on('joinRoom', async (incoming) => {
       opponentElo: player1Info.elo
     });
 
-    io.to(room).emit('startGame', getRandomQuestion());
+    const startTime = admin.firestore.Timestamp.now();
+    const question = getRandomQuestion();
+
+    await db.collection('matches').doc(room).set({
+      startTime: startTime,
+      players: [socket1.userId || 'anon1', socket2.userId || 'anon2'],
+      type: 'private',
+      status: 'ongoing'
+    });
+
+    io.to(room).emit('startGame', { question, startTime: startTime.toDate().getTime()  });
   }
 });
 
   // PUBLIC MATCHMAKING
- socket.on('publicMatch', async () => {
+socket.on('publicMatch', async () => {
   queue.push(socket);
 
   if (queue.length >= 2) {
     const player1 = queue.shift();
     const player2 = queue.shift();
-    
+
     if (player1.userId === player2.userId) {
       player2.emit('waitingForOpponent');
       queue.unshift(player2);
@@ -137,7 +144,6 @@ socket.on('joinRoom', async (incoming) => {
     player1.room = roomCode;
     player2.room = roomCode;
 
-    // Helper to get username and elo
     const getUserInfo = async (sock) => {
       if (sock.userId) {
         const docSnap = await db.collection("users").doc(sock.userId).get();
@@ -155,13 +161,13 @@ socket.on('joinRoom', async (incoming) => {
     const player1Info = await getUserInfo(player1);
     const player2Info = await getUserInfo(player2);
 
-    // Send usernames and ELOs to each player
     player1.emit('playerInfo', {
       self: player1Info.username,
       opponent: player2Info.username,
       selfElo: player1Info.elo,
       opponentElo: player2Info.elo
     });
+
     player2.emit('playerInfo', {
       self: player2Info.username,
       opponent: player1Info.username,
@@ -169,8 +175,17 @@ socket.on('joinRoom', async (incoming) => {
       opponentElo: player1Info.elo
     });
 
+    const startTime = admin.firestore.Timestamp.now();
     const question = getRandomQuestion();
-    io.to(roomCode).emit('startGame', question);
+
+    await db.collection('matches').doc(roomCode).set({
+      startTime: startTime,
+      players: [player1.userId || 'anon1', player2.userId || 'anon2'],
+      type: 'public',
+      status: 'ongoing'
+    });
+
+    io.to(roomCode).emit('startGame', { question, startTime: startTime.toDate().getTime() });
   } else {
     socket.emit('waitingForOpponent');
   }

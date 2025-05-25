@@ -6,6 +6,7 @@ let currentPage = 1;
 const usersPerPage = 10;
 let globalUsers = [];
 
+
 async function fetchLeaderboard() {
   const usersRef = collection(db, "users");
   const snapshot = await getDocs(usersRef);

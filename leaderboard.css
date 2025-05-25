@@ -197,7 +197,12 @@
   right: 0;
   width: 60px;
   height: 60px;
-  background: radial-gradient(circle, rgba(22, 246, 107, 0.1) 0%, rgba(22, 246, 107, 0) 70%);
+  background: radial-gradient(circle, 
+    rgba(22, 246, 107, 0.06) 0%, 
+    rgba(22, 246, 107, 0.03) 30%, 
+    rgba(22, 246, 107, 0.01) 50%, 
+    rgba(22, 246, 107, 0.0025) 65%,
+    rgba(22, 246, 107, 0) 77%);
   z-index: 0;
 }
 
@@ -242,3 +247,4 @@
   margin-left: 4px;
   font-weight: 400;
 }
+
