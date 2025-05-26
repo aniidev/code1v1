@@ -563,11 +563,6 @@ testCases.forEach(({ inputs, expected }, idx) => {
   // --- C++ ---
   if (lang === 'cpp') {
     let harness = `\n// === Test Harness ===\n`;
-    harness += `#include <iostream>\n`;
-    harness += `#include <vector>\n`;
-    harness += `#include <string>\n`;
-    harness += `#include <exception>\n`;
-    harness += `using namespace std;\n\n`;
     
     // Add helper functions for vector operations
     harness += `bool vectorsEqualInt(const vector<int>& a, const vector<int>& b) {\n`;
