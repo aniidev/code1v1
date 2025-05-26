@@ -575,7 +575,7 @@
     "id": 11,
     "title": "Top K Frequent Elements",
     "difficulty": "Medium",
-    "description": "Given an integer array nums and an integer k, return the k most frequent elements. You may return the answer in any order.",
+    "description": "Given an integer array nums and an integer k, return the k most frequent elements. Sort your answer.",
     "examples": [
       {
         "input": "nums = [1,1,1,2,2,3], k = 2",

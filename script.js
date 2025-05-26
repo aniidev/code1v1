@@ -500,115 +500,186 @@ testCases.forEach(({ inputs, expected }, idx) => {
   }
   
   // --- JAVA ---
-  if (lang === 'java') {
-    let importLine = '';
-    if (Object.values(inputTypes).some(t => /\bList\b/.test(t))) {
-      importLine = 'import java.util.*;';
-    }
-    
-    let harness = `\n${importLine}\n// === Test Harness ===\n`;
+ if (lang === 'java') {
+    let harness = `\n// === Test Harness ===\n`;
     harness += `    public static void runTests() {\n`;
     
     testCases.forEach((tc, idx) => {
-      const inputs = parseTestCaseInputs(tc.input, argNames);
-      
-      const formatted = inputs.map((inputValue, i) => {
-        const argType = inputTypes[argNames[i]];
-        const parsedValue = parseInputValue(inputValue, argType);
-        return formatArg(parsedValue, argType, lang);
-      });
-      
-      const expected = parseInputValue(tc.expectedOutput, returnType);
-      
-      harness += `
-        try {
-            `;
-            
-      // Determine the correct return type for Java
-      let javaReturnType = returnType;
-      if (returnType === 'bool') javaReturnType = 'boolean';
-      if (returnType === 'int') javaReturnType = 'int';
-      if (returnType.includes('[]')) javaReturnType = returnType;
-      
-      harness += `${javaReturnType} result = ${funcName}(${formatted.join(', ')});
-            boolean passed = `;
-      
-      // Handle comparison based on return type
-      if (returnType === 'bool' || returnType === 'boolean') {
-        harness += `result == ${expected}`;
-      } else if (returnType === 'int' || returnType === 'number') {
-        harness += `result == ${expected}`;
-      } else if (returnType.includes('[]')) {
-        harness += `java.util.Arrays.equals(result, ${formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang)})`;
-      } else {
-        harness += `result.equals("${expected}")`;
-      }
-      
-      harness += `; 
-            System.out.println("Case ${idx+1}: " + (passed ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + result);
-        } catch (Exception e) {
-            System.err.println("Case ${idx+1}: ERROR | " + e.getMessage());
+        const inputs = parseTestCaseInputs(tc.input, argNames);
+        
+        const formatted = inputs.map((inputValue, i) => {
+            const argType = inputTypes[argNames[i]];
+            const parsedValue = parseInputValue(inputValue, argType);
+            return formatArg(parsedValue, argType, lang);
+        });
+        
+        const expected = parseInputValue(tc.expectedOutput, returnType);
+        
+        harness += `        try {\n`;
+        harness += `            `;
+        
+        // Determine the correct return type for Java
+        let javaReturnType = returnType;
+        if (returnType === 'bool') javaReturnType = 'boolean';
+        if (returnType === 'int') javaReturnType = 'int';
+        if (returnType.includes('[]')) javaReturnType = returnType;
+        
+        harness += `${javaReturnType} result = ${funcName}(${formatted.join(', ')});\n`;
+        harness += `            boolean passed = `;
+        
+        // Handle comparison based on return type
+        if (returnType === 'bool' || returnType === 'boolean') {
+            harness += `result == ${expected}`;
+        } else if (returnType === 'int' || returnType === 'number') {
+            harness += `result == ${expected}`;
+        } else if (returnType.includes('[]')) {
+            harness += `java.util.Arrays.equals(result, ${formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang)})`;
+        } else {
+            harness += `result.equals("${expected}")`;
         }
-    `;
+        
+        harness += `;\n`;
+        
+        // Fix the output formatting for arrays
+        if (returnType.includes('[]')) {
+            harness += `            System.out.println("Case ${idx+1}: " + (passed ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + java.util.Arrays.toString(result));\n`;
+        } else {
+            harness += `            System.out.println("Case ${idx+1}: " + (passed ? "PASS" : "FAIL") + " | Expected: ${tc.expectedOutput} | Output: " + result);\n`;
+        }
+        
+        harness += `        } catch (Exception e) {\n`;
+        harness += `            System.err.println("Case ${idx+1}: ERROR | " + e.getMessage());\n`;
+        harness += `        }\n`;
     });
     
     harness += `    }\n`;
-    harness += `
-    public static void main(String[] args) {
-        runTests();
-    }`;
+    harness += `\n    public static void main(String[] args) {\n`;
+    harness += `        runTests();\n`;
+    harness += `    }`;
     
     return harness;
-  }
+}
 
   // --- C++ ---
   if (lang === 'cpp') {
     let harness = `\n// === Test Harness ===\n`;
+    harness += `#include <iostream>\n`;
+    harness += `#include <vector>\n`;
+    harness += `#include <string>\n`;
+    harness += `#include <exception>\n`;
+    harness += `using namespace std;\n\n`;
     
-    harness += `void runTests() {\n`;
-    testCases.forEach((tc, idx) => {
-      const inputs = parseTestCaseInputs(tc.input, argNames);
-      
-      // Generate unique variable names for each test case
-      let decls = '';
-      let argsList = [];
-      
-      inputs.forEach((v, i) => {
-        const argType = inputTypes[argNames[i]];
-        const parsedValue = parseInputValue(v, argType);
-        
-        if (/\bvector\b|\[\]/.test(argType)) {
-          const elemType = /int|number/.test(argType) ? 'int' : 'string';
-          const varName = `${argNames[i]}_${idx}`;
-          decls += `    vector<${elemType}> ${varName} = ${formatArg(parsedValue, argType, lang)};\n`;
-          argsList.push(varName);
-        } else {
-          argsList.push(formatArg(parsedValue, argType, lang));
-        }
-      });
-      
-      const expected = formatArg(parseInputValue(tc.expectedOutput, returnType), returnType, lang);
-      
-      harness += `
-    ${decls}
-    try {
-        auto result = ${funcName}(${argsList.join(', ')});
-        cout << "Case ${idx+1}: " << (result == ${expected} ? "PASS" : "FAIL")
-             << " | Expected: ${tc.expectedOutput} | Output: " << result << endl;
-    } catch (const exception& e) {
-        cerr << "Case ${idx+1}: ERROR | " << e.what() << endl;
-    }
-`;
-    });
+    // Add helper functions for vector operations
+    harness += `bool vectorsEqualInt(const vector<int>& a, const vector<int>& b) {\n`;
+    harness += `    if (a.size() != b.size()) return false;\n`;
+    harness += `    for (size_t i = 0; i < a.size(); i++) {\n`;
+    harness += `        if (a[i] != b[i]) return false;\n`;
+    harness += `    }\n`;
+    harness += `    return true;\n`;
     harness += `}\n\n`;
     
-    harness += `int main() {
-    runTests();
-    return 0;
-}\n`;
+    harness += `bool vectorsEqualString(const vector<string>& a, const vector<string>& b) {\n`;
+    harness += `    if (a.size() != b.size()) return false;\n`;
+    harness += `    for (size_t i = 0; i < a.size(); i++) {\n`;
+    harness += `        if (a[i] != b[i]) return false;\n`;
+    harness += `    }\n`;
+    harness += `    return true;\n`;
+    harness += `}\n\n`;
+    
+    harness += `void printVectorInt(const vector<int>& v) {\n`;
+    harness += `    cout << "[";\n`;
+    harness += `    for (size_t i = 0; i < v.size(); i++) {\n`;
+    harness += `        if (i > 0) cout << ", ";\n`;
+    harness += `        cout << v[i];\n`;
+    harness += `    }\n`;
+    harness += `    cout << "]";\n`;
+    harness += `}\n\n`;
+    
+    harness += `void printVectorString(const vector<string>& v) {\n`;
+    harness += `    cout << "[";\n`;
+    harness += `    for (size_t i = 0; i < v.size(); i++) {\n`;
+    harness += `        if (i > 0) cout << ", ";\n`;
+    harness += `        cout << "\\"" << v[i] << "\\"";\n`;
+    harness += `    }\n`;
+    harness += `    cout << "]";\n`;
+    harness += `}\n\n`;
+    
+    harness += `void runTests() {\n`;
+    
+    testCases.forEach((tc, idx) => {
+        const inputs = parseTestCaseInputs(tc.input, argNames);
+        
+        // Generate unique variable names for each test case
+        let decls = '';
+        let argsList = [];
+        
+        inputs.forEach((v, i) => {
+            const argType = inputTypes[argNames[i]];
+            const parsedValue = parseInputValue(v, argType);
+            
+            if (/\bvector\b|\[\]/.test(argType)) {
+                const elemType = /int|number/.test(argType) ? 'int' : 'string';
+                const varName = `${argNames[i]}_${idx}`;
+                decls += `    vector<${elemType}> ${varName} = ${formatArg(parsedValue, argType, lang)};\n`;
+                argsList.push(varName);
+            } else {
+                argsList.push(formatArg(parsedValue, argType, lang));
+            }
+        });
+        
+        const expectedValue = parseInputValue(tc.expectedOutput, returnType);
+        const isReturnVector = /\bvector\b|\[\]/.test(returnType);
+        
+        if (isReturnVector) {
+            const elemType = /int|number/.test(returnType) ? 'int' : 'string';
+            const expectedVarName = `expected_${idx}`;
+            decls += `    vector<${elemType}> ${expectedVarName} = ${formatArg(expectedValue, returnType, lang)};\n`;
+            
+            harness += `${decls}    try {\n`;
+            harness += `        auto result = ${funcName}(${argsList.join(', ')});\n`;
+            
+            if (elemType === 'int') {
+                harness += `        bool passed = vectorsEqualInt(result, ${expectedVarName});\n`;
+                harness += `        cout << "Case ${idx+1}: " << (passed ? "PASS" : "FAIL") << " | Expected: ";\n`;
+                harness += `        printVectorInt(${expectedVarName});\n`;
+                harness += `        cout << " | Output: ";\n`;
+                harness += `        printVectorInt(result);\n`;
+            } else {
+                harness += `        bool passed = vectorsEqualString(result, ${expectedVarName});\n`;
+                harness += `        cout << "Case ${idx+1}: " << (passed ? "PASS" : "FAIL") << " | Expected: ";\n`;
+                harness += `        printVectorString(${expectedVarName});\n`;
+                harness += `        cout << " | Output: ";\n`;
+                harness += `        printVectorString(result);\n`;
+            }
+            
+            harness += `        cout << endl;\n`;
+            harness += `    } catch (const exception& e) {\n`;
+            harness += `        cout << "Case ${idx+1}: ERROR | " << e.what() << endl;\n`;
+            harness += `    } catch (...) {\n`;
+            harness += `        cout << "Case ${idx+1}: ERROR | Unknown exception" << endl;\n`;
+            harness += `    }\n`;
+        } else {
+            const expected = formatArg(expectedValue, returnType, lang);
+            harness += `${decls}    try {\n`;
+            harness += `        auto result = ${funcName}(${argsList.join(', ')});\n`;
+            harness += `        cout << "Case ${idx+1}: " << (result == ${expected} ? "PASS" : "FAIL")\n`;
+            harness += `             << " | Expected: ${tc.expectedOutput} | Output: " << result << endl;\n`;
+            harness += `    } catch (const exception& e) {\n`;
+            harness += `        cout << "Case ${idx+1}: ERROR | " << e.what() << endl;\n`;
+            harness += `    } catch (...) {\n`;
+            harness += `        cout << "Case ${idx+1}: ERROR | Unknown exception" << endl;\n`;
+            harness += `    }\n`;
+        }
+    });
+    
+    harness += `}\n\n`;
+    harness += `int main() {\n`;
+    harness += `    runTests();\n`;
+    harness += `    return 0;\n`;
+    harness += `}\n`;
     
     return harness;
-  }
+}
 
   return '';
 }
