@@ -1089,22 +1089,32 @@ function renderRecentMatches(matches) {
 
   const groups = groupMatchesByDate(matches);
   let html = '';
-  Object.keys(groups).sort((a, b) => new Date(b) - new Date(a)).forEach(dateStr => {
-    html += `<div class="match-date">${dateStr}</div>`;
-    groups[dateStr].forEach(match => {
-      html += `
-        <div class="match-card">
-          <div class="opponent">Opponent: ${match.opponentName || 'Unknown'}</div>
-          <div class="elos">Your ELO: <b>${match.myElo || 'N/A'}</b> | Opponent ELO: <b>${match.opponentElo || 'N/A'}</b></div>
-          <div class="result ${match.result === 'win' ? 'win' : 'lose'}">
-            ${match.result === 'win' ? 'Victory' : 'Defeat'}
+  Object.keys(groups)
+    .sort((a, b) => new Date(b) - new Date(a))
+    .forEach(dateStr => {
+      html += `<div class="match-date">${dateStr}</div>`;
+      groups[dateStr].forEach(match => {
+        html += `
+          <div class="match-card">
+            <div>
+             <span class="result ${match.result === 'win' ? 'win' : 'lose'}" style="margin-left:8px;font-weight:700;">
+                ${match.result === 'win' ? '<span style="color:#16f66b;">Victory</span>' : '<span style="color:#f61616;">Defeat</span>'}
+              </span>
+              <span style="font-weight:600;">YOU:</span>
+              <span style="color:#fff;">${match.myElo || 'N/A'} <strong>VS</strong> </span>
+              <span style="color:#baffd8;font-weight:600;">${match.opponentName || 'Unknown'}:</span>
+              <span style="color:#baffd8;">${match.opponentElo || 'N/A'}</span>
+             
+            </div>
+            
+            
           </div>
-        </div>
-      `;
+        `;
+      });
     });
-  });
   container.innerHTML = html;
 }
+
 
 async function fetchRecentMatches(userId) {
   const response = await fetch(`/api/matches?userId=${userId}`);
