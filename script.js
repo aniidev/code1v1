@@ -152,7 +152,7 @@ require(['vs/editor/editor.main'], function () {
 
 function submitCode(timerEnd) {
   const code = editor.getValue();
-  runCode();
+  runCode(true);
   socket.emit('submitCode', { room, code, won, timerEnd});
 }
 
@@ -679,29 +679,28 @@ testCases.forEach(({ inputs, expected }, idx) => {
   return '';
 }
 
-async function runCode() {
-  const code = editor.getValue();
-  const lang = document.getElementById('languageSelect').value;
-  document.getElementById('output').innerHTML = '<pre class="info">Sending request to Piston API...</pre>';
-
+async function runCode(isSubmission = false) {
   try {
     if (!currentQuestion) throw new Error("No question selected.");
 
     const testCases = currentQuestion.testCases || [];
+    const lang = document.getElementById('languageSelect').value;
     const inputTypes = currentQuestion.inputs?.[lang] || {};
     const funcName = currentQuestion.functionName;
     const returnType = getReturnType(lang, currentQuestion.output);
 
+    const effectiveTestCases = isSubmission
+      ? testCases
+      : testCases.slice(0, 2);
+
     let fullCode;
-    
     if (lang === 'java') {
       let imports = 'import java.util.*;\n';
-      imports += 'import java.math.*;\n';   
-      
+      imports += 'import java.math.*;\n';
       fullCode = `${imports}
 public class Solution {
-    ${code}
-${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}
+${editor.getValue()}
+${generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType)}
 }`;
     } else if (lang === 'cpp') {
       fullCode = `#include <iostream>
@@ -719,11 +718,13 @@ ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}
 #include <numeric>
 using namespace std;
 
-${code}
-${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
+${editor.getValue()}
+${generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType)}`;
     } else {
-      fullCode = code + generateTestHarness(lang, funcName, testCases, inputTypes, returnType);
+      fullCode = editor.getValue() + generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType);
     }
+
+    document.getElementById('output').innerHTML = '<pre class="info">Sending request to Piston API...</pre>';
 
     const pistonURL = "https://emkc.org/api/v2/piston/execute";
     const fileExtensions = {
@@ -732,7 +733,7 @@ ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
       "java": "java",
       "cpp": "cpp"
     };
-    
+
     const fileName = lang === 'java'
       ? 'Solution.java'
       : `main.${fileExtensions[lang]}`;
@@ -763,44 +764,49 @@ ${generateTestHarness(lang, funcName, testCases, inputTypes, returnType)}`;
 
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     const result = await response.json();
-    const stdoutLines = result.run.stdout?.split('\n').filter(l => l) || [];
-    const stderrText  = result.run.stderr?.trim();
+    const outputLines = result.run?.stdout?.split('\n').filter(l => l) || [];
+    const stderrText = result.run.stderr?.trim();
 
-    // Process results
-    let statusHTML = '';
     let outputHTML = '';
     let passed = 0;
-    const outputLines = result.run?.stdout?.split('\n').filter(l => l) || [];
-    
-    outputLines.forEach(line => {
+
+    outputLines.forEach((line, idx) => {
       const match = line.match(/Case (\d+): (PASS|FAIL|ERROR) \| (.*)/);
       if (match) {
         const [_, caseNum, result, details] = match;
         outputHTML += `<div class="${result.toLowerCase()}">`;
-        outputHTML += `🔄 <strong>Test Case ${caseNum}:</strong> `;
+        outputHTML += `<strong>Test Case ${caseNum}:</strong> `;
         outputHTML += `${result === 'PASS' ? '✅' : result === 'FAIL' ? '❌' : '⚠️'} `;
-        outputHTML += `${details}</div>`;
+        if (!isSubmission) {
+          const testCase = effectiveTestCases[parseInt(caseNum, 10) - 1];
+          if (testCase) {
+            outputHTML += `<span class="testcase-io"><b>Input:</b> ${JSON.stringify(testCase.input).replace(/\"/g, '')}`;
+          }
+        }
+        
+        outputHTML += ` ${details}`;
+        outputHTML += `</div>`;
         if (result === 'PASS') passed++;
       }
     });
-    
+
     if (stderrText) {
       outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
     }
 
-    const allPassed = passed === testCases.length;
+    const allPassed = passed === effectiveTestCases.length;
 
     document.getElementById('output').innerHTML = outputHTML || "<pre>No output</pre>";
 
     won = allPassed;
 
     socket.emit('testCaseUpdate', {
-        passed: passed,
-        total: testCases.length
+      passed: passed,
+      total: testCases.length
     });
 
   } catch (error) {
-    document.getElementById('output').innerHTML = 
+    document.getElementById('output').innerHTML =
       `<pre class="error">${error.stack || error}</pre>`;
     console.error('Execution error:', error);
   }
