@@ -272,7 +272,14 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
     io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
   }
   rooms[room].gameOver = true; 
-  await db.collection('matches').doc(room).update({ status: 'ended' });
+  await db.collection('matches').doc(room).update({
+  status: 'ended',
+  endTime: admin.firestore.Timestamp.now(),
+  results: [
+  { userId: socket.userId, username: socket.username, elo: newWinnerElo, result: 'win' },
+  { userId: opponentSocket.userId, username: opponentSocket.username, elo: newLoserElo, result: 'lose' }
+]
+});
 
 } else if (myUserId && opponentUserId) {
   socket.emit('result', 'Wrong Answer');
@@ -329,7 +336,14 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
           change: -(newWinnerElo - opponentData.elo)
         });
       }
-      await db.collection('matches').doc(room).update({ status: 'ended' });
+      await db.collection('matches').doc(room).update({
+  status: 'ended',
+  endTime: admin.firestore.Timestamp.now(),
+  results: [
+  { userId: socket.userId, username: socket.username, elo: newLoserElo, result: 'lose' },
+  { userId: opponentSocket.userId, username: opponentSocket.username, elo: newWinnerElo, result: 'win' }
+]
+});
       socket.disconnect(true); 
     }
 
@@ -391,9 +405,19 @@ socket.on("forfeit", async () => {
           elo: newLoserElo,
           change: myEloChange
         });
+        await db.collection('matches').doc(room).update({
+  status: 'ended',
+  endTime: admin.firestore.Timestamp.now(),
+ results: [
+  { userId: socket.userId, username: socket.username, elo: newLoserElo, result: 'lose' },
+  { userId: opponentSocket.userId, username: opponentSocket.username, elo: newWinnerElo, result: 'win' }
+]
+
+});
       }
+      
     }
-    await db.collection('matches').doc(room).update({ status: 'ended' });
+    
     
     // Room cleanup
     delete rooms[room];
@@ -437,3 +461,58 @@ function updateElo(winnerElo, loserElo) {
   const newLoserElo = Math.ceil(loserElo + k * (0 - (1 - expectedWin)));
   return [newWinnerElo, newLoserElo];
 }
+
+app.get('/api/matches', async (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+
+  try {
+    const snapshot = await db.collection('matches')
+      .where('players', 'array-contains', userId)
+      .where('status', '==', 'ended')
+      .orderBy('startTime', 'desc')
+      .limit(10)
+      .get();
+
+    const matches = [];
+    const opponentIds = new Set();
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (!data.results) return;
+      const myResult = data.results.find(r => r.userId === userId);
+      const opponentResult = data.results.find(r => r.userId !== userId);
+      if (opponentResult) opponentIds.add(opponentResult.userId);
+      matches.push({
+        opponentId: opponentResult ? opponentResult.userId : 'Unknown',
+        myElo: myResult ? myResult.elo : 'N/A',
+        opponentElo: opponentResult ? opponentResult.elo : 'N/A',
+        result: myResult ? myResult.result : 'N/A',
+        startTime: data.startTime ? data.startTime.toDate() : null
+      });
+    });
+
+    // Batch fetch opponent usernames
+    const opponentIdArr = Array.from(opponentIds);
+    const userDocs = opponentIdArr.length
+      ? await db.collection('users').where(
+          admin.firestore.FieldPath.documentId(), 'in', opponentIdArr
+        ).get()
+      : { docs: [] };
+
+    const idToName = {};
+    userDocs.docs.forEach(doc => {
+      idToName[doc.id] = doc.data().username || 'Unknown';
+    });
+
+    // Attach usernames to matches
+    matches.forEach(match => {
+      match.opponentName = idToName[match.opponentId] || 'Unknown';
+    });
+
+    res.json(matches);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch matches' });
+  }
+});

@@ -10,15 +10,24 @@ let opponentName = "Opponent";
 const userData = JSON.parse(localStorage.getItem("userData"));
 let opponentPassed = 0;
 let userPassed = 0;
-const gameDuration = 15 * 60 * 1000 + 5000; // 15 minutes in ms
+const gameDuration = 15 * 60 * 1000 + 6000; // 15 minutes in ms
 let startTime;
 
 if (userData) {
-  document.getElementById("userHeader").textContent =
-    `${userData.username}`;
-        document.getElementById('signUpBtn').style.display = 'none';
-    document.getElementById('logInBtn').style.display = 'none';
-    document.getElementById('logOutBtn').style.display = 'block';
+  document.getElementById("userHeader").textContent = `${userData.username}`;
+  document.getElementById('signUpBtn').style.display = 'none';
+  document.getElementById('logInBtn').style.display = 'none';
+  document.getElementById('logOutBtn').style.display = 'block';
+
+  // Add async IIFE to handle await
+  (async () => {
+    try {
+      const matches = await fetchRecentMatches(userData.uid);
+      renderRecentMatches(matches);
+    } catch (error) {
+      console.error('Error loading matches:', error);
+    }
+  })();
 }
 else
 {
@@ -56,7 +65,16 @@ window.addEventListener('DOMContentLoaded', () => {
   const userData = JSON.parse(localStorage.getItem("userData"));
   if (userData && userData.uid) {
     socket.emit('registerUser', { userId: userData.uid });
-
+    (async () => {
+    try {
+      const response = await fetch(`/api/matches?userId=${userData.uid}`);
+      if (!response.ok) throw new Error('Failed to fetch matches');
+      const matches = await response.json();
+      renderRecentMatches(matches);
+    } catch (error) {
+      console.error('Error loading matches:', error);
+    }
+  })();
   } else {
 
   }
@@ -71,6 +89,7 @@ function createRoom() {
       type: 'create' 
     });
     document.getElementById('lobby').style.display = 'none';
+    document.getElementById('matches').style.display = 'none';
     document.getElementById('waitingScreen').style.display = 'block';
     document.getElementById('waitingRoomCode').innerText = room;
 
@@ -93,6 +112,7 @@ function joinRoom() {
       type: 'join'
     });
         document.getElementById('lobby').style.display = 'none';
+        document.getElementById('matches').style.display = 'none';
 
   } else {
     window.location.href = 'login.html';
@@ -245,7 +265,7 @@ function findPublicMatch() {
   {
     socket.emit('publicMatch');
     document.getElementById('lobby').style.display = 'none';
-    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('matches').style.display = 'none';
     document.getElementById('publicWaiting').style.display = 'block';
   }
   else
@@ -266,6 +286,7 @@ function returnLobby()
   window.location.reload(true);
   document.getElementById('lobby').style.display = 'block';
   document.getElementById('header').style.display = 'block';
+  document.getElementById('matches').style.display = 'block';
   document.getElementById('endScreen').style.display = 'none';
     
 }
@@ -1056,4 +1077,48 @@ function startConfetti() {
   }
 
   loop();
+}
+
+function renderRecentMatches(matches) {
+  const container = document.getElementById('recent-matches');
+  if (!container) return;
+  if (!matches.length) {
+    container.innerHTML = '<div class="match-card">No recent matches found.</div>';
+    return;
+  }
+
+  const groups = groupMatchesByDate(matches);
+  let html = '';
+  Object.keys(groups).sort((a, b) => new Date(b) - new Date(a)).forEach(dateStr => {
+    html += `<div class="match-date">${dateStr}</div>`;
+    groups[dateStr].forEach(match => {
+      html += `
+        <div class="match-card">
+          <div class="opponent">Opponent: ${match.opponentName || 'Unknown'}</div>
+          <div class="elos">Your ELO: <b>${match.myElo || 'N/A'}</b> | Opponent ELO: <b>${match.opponentElo || 'N/A'}</b></div>
+          <div class="result ${match.result === 'win' ? 'win' : 'lose'}">
+            ${match.result === 'win' ? 'Victory' : 'Defeat'}
+          </div>
+        </div>
+      `;
+    });
+  });
+  container.innerHTML = html;
+}
+
+async function fetchRecentMatches(userId) {
+  const response = await fetch(`/api/matches?userId=${userId}`);
+  if (!response.ok) throw new Error('Failed to fetch matches');
+  return response.json();
+}
+
+function groupMatchesByDate(matches) {
+  const groups = {};
+  matches.forEach(match => {
+    const dateObj = new Date(match.startTime);
+    const dateStr = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' });
+    if (!groups[dateStr]) groups[dateStr] = [];
+    groups[dateStr].push(match);
+  });
+  return groups;
 }
