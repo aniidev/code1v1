@@ -132,8 +132,8 @@
               </select>
             </div>
             <div>             
-              <button onclick="runCode()" class="secondary"><i class="fa-solid fa-play"></i> Run Code</button>             
-              <button onclick="submitCode()"><i class="fa-solid fa-paper-plane"></i> Submit</button>
+              <button onclick="runCode()" class="secondary" id="runCodeBtn"><i class="fa-solid fa-play"></i> Run Code</button>             
+              <button onclick="submitCode()" id="submitCodeBtn"><i class="fa-solid fa-paper-plane"></i> Submit</button>
             </div>           
           </div>           
           <div id="output"></div>          
@@ -151,7 +151,7 @@
     <div id="end-status" class="end-status-text">You Won!</div>
     <div id="score" class="score-section">
       <span class="score-label">ELO:</span>
-      <span id="elo-value" class="score-value">1500</span>
+      <span id="elo-value" class="score-value">1000</span>
       <div id="elo-change" class="elo-change" style="color: green;">+20</div>
     </div>
     <button onclick="returnLobby()" class="button end-btn">Back to Lobby</button>

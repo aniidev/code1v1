@@ -150,9 +150,9 @@ require(['vs/editor/editor.main'], function () {
   });
 });
 
-function submitCode(timerEnd) {
+async function submitCode(timerEnd) {
   const code = editor.getValue();
-  runCode(true);
+  await runCode(true);
   socket.emit('submitCode', { room, code, won, timerEnd});
 }
 
@@ -680,6 +680,8 @@ testCases.forEach(({ inputs, expected }, idx) => {
 }
 
 async function runCode(isSubmission = false) {
+  if(isSubmission) document.getElementById('submitCodeBtn').innerHTML = ' Judging...';
+  else document.getElementById('runCodeBtn').innerHTML = ' Pending...';
   try {
     if (!currentQuestion) throw new Error("No question selected.");
 
@@ -810,6 +812,8 @@ ${generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType
       `<pre class="error">${error.stack || error}</pre>`;
     console.error('Execution error:', error);
   }
+  if(isSubmission) document.getElementById('submitCodeBtn').innerHTML = ' Submit';
+  else document.getElementById('runCodeBtn').innerHTML = ' Run Code';
 }
 
 function setLanguage() {
@@ -873,6 +877,7 @@ function setLanguage() {
 
   monaco.editor.setModelLanguage(editor.getModel(), monacoLang);
   editor.setValue(fullTemplate);
+  
 }
 
 

@@ -222,6 +222,7 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
     socket.emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - myElo});
 
     rooms[room].gameOver = true;
+    await db.collection('matches').doc(room).update({ status: 'ended' });
     return;
   }
   else if (won && myUserId && opponentUserId) {
@@ -271,6 +272,7 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
     io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
   }
   rooms[room].gameOver = true; 
+  await db.collection('matches').doc(room).update({ status: 'ended' });
 
 } else if (myUserId && opponentUserId) {
   socket.emit('result', 'Wrong Answer');
@@ -327,6 +329,7 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
           change: -(newWinnerElo - opponentData.elo)
         });
       }
+      await db.collection('matches').doc(room).update({ status: 'ended' });
       socket.disconnect(true); 
     }
 
@@ -390,7 +393,8 @@ socket.on("forfeit", async () => {
         });
       }
     }
-
+    await db.collection('matches').doc(room).update({ status: 'ended' });
+    
     // Room cleanup
     delete rooms[room];
     if (opponentId) {
