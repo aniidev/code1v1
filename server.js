@@ -201,7 +201,8 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
   const isPlayer1 = playerIndex === 0;
   const opponentIndex = isPlayer1 ? 1 : 0;
   const opponentSocketId = rooms[room][opponentIndex];
-
+  const opponentId = rooms[room].find(id => id !== socket.id);
+  const opponentSocket = io.sockets.sockets.get(opponentId);
   const myUserId = socket.userId;
   const opponentUserId = io.sockets.sockets.get(opponentSocketId)?.userId;
 
@@ -312,7 +313,7 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
         const opponentData = opponentDoc.data();
 
         const [newWinnerElo, newLoserElo] = updateElo(opponentData.elo, myData.elo);
-
+          
         await opponentDocRef.update({
           elo: newWinnerElo,
           wins: (opponentData.wins || 0) + 1,
@@ -335,8 +336,7 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
           elo: newLoserElo,
           change: -(newWinnerElo - opponentData.elo)
         });
-      }
-      await db.collection('matches').doc(room).update({
+        await db.collection('matches').doc(room).update({
   status: 'ended',
   endTime: admin.firestore.Timestamp.now(),
   results: [
@@ -344,6 +344,8 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
   { userId: opponentSocket.userId, username: opponentSocket.username, elo: newWinnerElo, result: 'win' }
 ]
 });
+      }
+      
       socket.disconnect(true); 
     }
 

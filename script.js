@@ -10,6 +10,7 @@ let opponentName = "Opponent";
 const userData = JSON.parse(localStorage.getItem("userData"));
 let opponentPassed = 0;
 let userPassed = 0;
+let gameActive = false;
 const gameDuration = 15 * 60 * 1000 + 6000; // 15 minutes in ms
 let startTime;
 
@@ -121,6 +122,7 @@ function joinRoom() {
 
 
 socket.on('startGame', ({question, startTime}) => {
+  gameActive = true;
   currentQuestion = question;
   document.getElementById('waitingScreen').style.display = 'none';
   document.getElementById('publicWaiting').style.display = 'none';
@@ -131,7 +133,11 @@ socket.on('startGame', ({question, startTime}) => {
   window.addEventListener('beforeunload', confirmBeforeUnload);
   let timeLeft = 5;
   document.getElementById('vsTimer').innerText = `0:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+  if(gameActive) 
+  {
   const vsInterval = setInterval(() => {
+    if(gameActive)
+    {
     timeLeft--;
     document.getElementById('vsTimer').innerText = `0:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
     if (timeLeft <= 0) {
@@ -153,8 +159,10 @@ socket.on('startGame', ({question, startTime}) => {
       ).join('');
       startGameTimer(startTime);
     }
+  }
   }, 1000);
-  setLanguage();
+  if(gameActive) setLanguage();
+}
 });
 
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
@@ -180,8 +188,11 @@ async function submitCode(timerEnd) {
 socket.on('result', (msg) => {
   if(msg !== "Wrong Answer")
   {
+  gameActive = false;
+  
   console.log('Received result:', msg);
   window.removeEventListener('beforeunload', confirmBeforeUnload);
+  document.getElementById('vsScreen').style.display = 'none';
   document.getElementById('game').style.display = 'none';
   document.getElementById('endScreen').style.display = 'block';
 
@@ -191,7 +202,7 @@ socket.on('result', (msg) => {
   let statusText = msg;
   let statusColor = '#16f66b';
 
-  if (msg === "You won!" || msg === "You Won!" || msg === "Opponent Forfeit") {
+  if (msg === "You won!" || msg === "You Won!" || msg === "Opponent Forfeit" ||  msg.toLowerCase().includes("disconnected")) {
     startConfetti();
     iconClass = 'fa-trophy';
     iconColor = '#ffffff';
@@ -776,7 +787,7 @@ ${generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType
       stdin: "",
       args: [],
       compile_timeout: 10000,
-      run_timeout: 3000
+      run_timeout: 1000
     };
 
     const response = await fetch(pistonURL, {
@@ -787,13 +798,16 @@ ${generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType
 
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     const result = await response.json();
+    const runResult = result.run || {};
     const outputLines = result.run?.stdout?.split('\n').filter(l => l) || [];
     const stderrText = result.run.stderr?.trim();
-
+      
     let outputHTML = '';
     let passed = 0;
-
-    outputLines.forEach((line, idx) => {
+    if (runResult.signal === "SIGKILL" || /tim(e|ed)\s*out/i.test(stderrText || "")) {
+  outputHTML += `<div class="error">❌ Time Limit Exceeded (${requestData.run_timeout/1000}s)</div>`;
+} else {
+  outputLines.forEach((line, idx) => {
       const match = line.match(/Case (\d+): (PASS|FAIL|ERROR) \| (.*)/);
       if (match) {
         const [_, caseNum, result, details] = match;
@@ -812,10 +826,12 @@ ${generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType
         if (result === 'PASS') passed++;
       }
     });
+}
 
-    if (stderrText) {
-      outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
-    }
+
+    if (stderrText && !/tim(e|ed)\s*out/i.test(stderrText)) {
+  outputHTML += `<pre class="error">⚠️ Error output:\n${stderrText}</pre>`;
+}
 
     const allPassed = passed === effectiveTestCases.length;
 
@@ -1083,7 +1099,7 @@ function renderRecentMatches(matches) {
   const container = document.getElementById('recent-matches');
   if (!container) return;
   if (!matches.length) {
-    container.innerHTML = '<div class="match-card">No recent matches found.</div>';
+    container.innerHTML = '<div class="match-card">No recent matches</div>';
     return;
   }
 
