@@ -11,7 +11,7 @@ const userData = JSON.parse(localStorage.getItem("userData"));
 let opponentPassed = 0;
 let userPassed = 0;
 let gameActive = false;
-const gameDuration = 15 * 60 * 1000 + 6000; // 15 minutes in ms
+const gameDuration = 15 * 60 * 1000 + 6000; // 15 minutes in ms + load time
 let startTime;
 
 if (userData) {
@@ -185,7 +185,7 @@ async function submitCode(timerEnd) {
 }
 
 
-socket.on('result', (msg) => {
+socket.on('result', (msg, code) => {
   if(msg !== "Wrong Answer")
   {
   gameActive = false;
@@ -203,15 +203,22 @@ socket.on('result', (msg) => {
   let statusColor = '#16f66b';
 
   if (msg === "You won!" || msg === "You Won!" || msg === "Opponent Forfeit" ||  msg.toLowerCase().includes("disconnected")) {
+    document.getElementById('opponentsCode').style.display = 'none';
     startConfetti();
     iconClass = 'fa-trophy';
     iconColor = '#ffffff';
     statusColor = '#16f66b';
+
   } else if (msg === "Opponent AC - You lose" || msg.toLowerCase().includes("lose") || msg === "Forfeit") {
+    if(msg === "Opponent AC - You lose")
+    {
+      document.getElementById('opponentsCode').style.display = 'block';
+      document.getElementById('opponentsCode').innerHTML = 
+      `<pre class="code-block">${escapeHtml(code)}</pre>`;
+    }
     iconClass = 'fa-handshake';
     iconColor = '#ffffff';
     statusColor = '#ff4d4d';
-
   }
   const iconElem = document.getElementById('endIcon');
   iconElem.className = `fa-solid ${iconClass}`;
@@ -299,7 +306,7 @@ function returnLobby()
   document.getElementById('header').style.display = 'block';
   document.getElementById('matches').style.display = 'block';
   document.getElementById('endScreen').style.display = 'none';
-    
+  document.getElementById('opponentsCode').style.display = 'none';
 }
 function startGameTimer(serverStartTime) {
   startTime = serverStartTime;
@@ -1142,9 +1149,18 @@ function groupMatchesByDate(matches) {
   const groups = {};
   matches.forEach(match => {
     const dateObj = new Date(match.startTime);
-    const dateStr = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const dateStr = dateObj.toLocaleDateString(undefined, { year: '2-digit', month: '2-digit', day: '2-digit'});
     if (!groups[dateStr]) groups[dateStr] = [];
     groups[dateStr].push(match);
   });
   return groups;
+}
+
+function escapeHtml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

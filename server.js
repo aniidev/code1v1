@@ -205,6 +205,11 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
   const opponentSocket = io.sockets.sockets.get(opponentId);
   const myUserId = socket.userId;
   const opponentUserId = io.sockets.sockets.get(opponentSocketId)?.userId;
+  const formattedCode = code
+  .replace(/{/g, ' {\n')
+  .replace(/}/g, '\n}\n')
+  .replace(/;/g, ';\n')
+  .replace(/(\w)(=)/g, '$1 $2');
 
   if (timerEnd && myUserId && opponentUserId) {
     const myDocRef = db.collection("users").doc(myUserId);
@@ -221,7 +226,10 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
 
     socket.emit('result', "Time's up - You lose");
     socket.emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - myElo});
-
+    results: [
+    { userId: socket.userId, username: socket.username, elo: newWinnerElo, result: 'lose' },
+    { userId: opponentSocket.userId, username: opponentSocket.username, elo: newLoserElo, result: 'lose' }
+    ]
     rooms[room].gameOver = true;
     await db.collection('matches').doc(room).update({ status: 'ended' });
     return;
@@ -265,11 +273,11 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
   });
 
   // Send result and ELO to both clients
-  socket.emit('result', 'You won!');
+  socket.emit('result', 'You won!', formattedCode);
   socket.emit('eloUpdate', { elo: newWinnerElo, change: newWinnerElo - myElo });
   
   if (opponentSocketId) {
-    io.to(opponentSocketId).emit('result', 'Opponent AC - You lose');
+    io.to(opponentSocketId).emit('result', 'Opponent AC - You lose', formattedCode);
     io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
   }
   rooms[room].gameOver = true; 

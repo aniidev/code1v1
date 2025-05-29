@@ -12,9 +12,11 @@
   "description": "",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
+    "esprima": "^4.0.1",
     "express": "^5.1.0",
     "firebase": "^11.7.1",
     "firebase-admin": "^13.4.0",
+    "prettier": "^3.5.3",
     "socket.io": "^4.8.1"
   }
 }

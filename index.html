@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"> 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script> 
-  <script type="module" src="./auth.js"></script>
+  <script type="module" src="./auth.js"></script>  
 </head> 
 <body>   
   <div class="header" id="header">     
@@ -41,8 +41,7 @@
       <button onclick="joinRoom()" id="joinBtn">Join</button>
     </div>
   </div>
-  <div id="matches" class="container" >
-    <div class="logo" style="justify-content: center;">Match History</div>
+  <div id="matches" >
     <div id="recent-matches" class="matches-list"></div>
   </div>
 </div>
@@ -158,9 +157,12 @@
       <span id="elo-value" class="score-value">1000</span>
       <div id="elo-change" class="elo-change" style="color: green;">+20</div>
     </div>
+
     <button onclick="returnLobby()" class="button end-btn">Back to Lobby</button>
   </div>
 </div>
+<h3>Opponent's Code:</h3>
+<div id="opponentsCode" class="container" style="display: none;"></div>
 
   
   <script src="script.js"></script>

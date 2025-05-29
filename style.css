@@ -1166,28 +1166,29 @@ a {
 .matches-list {
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  gap: 0.7rem;
 }
 
 .match-date {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #16f66b;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
+  color: #ffffff;
+  margin-top: 0.2rem;
+  margin-bottom: 0.1rem;
   letter-spacing: 0.5px;
 }
 
 .match-card {
-  background: linear-gradient(90deg, #1a1a1a 80%, #16f66b14 100%);
   border: 1.5px solid rgba(22, 246, 107, 0.11);
   border-radius: 12px;
-  padding: 1.1rem 1.4rem 1.1rem 1.4rem;
+  padding: 1.1rem 1.1rem 1.1rem 1.1rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  box-shadow: 0 2px 8px rgba(22, 246, 107, 0.05) inset;
+  box-shadow: 0 2px 8px rgba(4, 6, 5, 0.05) inset;
   position: relative;
+  width: fit-content; 
+  min-width: 280px; 
 }
 
 .match-card .opponent {
@@ -1226,15 +1227,35 @@ a {
   width: 100%;
   max-width: 1700px;
   margin: 0 auto;
+  position: relative; 
 }
 
-#lobby.container, #matches.container {
+#lobby.container {
+  margin: 2rem auto;
+  width: 100%;
+  max-width: 480px;
+  min-width: 400px;
+  flex: 0 0 auto;
+  position: fixed; 
+  left: 50%;          
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#matches {
   margin: 2rem 0;
   width: 100%;
   max-width: 480px;
   min-width: 320px;
   flex: 1 1 0;
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  overflow: visible;
+  margin-left: auto; 
 }
+
 
 #matches.container {
   margin-left: 0;
@@ -1246,9 +1267,23 @@ a {
     align-items: center;
     gap: 1.5rem;
   }
-  #lobby.container, #matches.container {
+  #lobby.container {
+    position: static;
+    transform: none;
+    left: auto;     
     max-width: 98vw;
     min-width: unset;
+    margin: 0rem auto;
+  }
+  #matches {
+    max-width: 98vw;
+    min-width: unset;
+    margin-left: 0;
   }
 }
 
+.code-block {
+  white-space: pre-wrap;
+  font-family: 'Courier New', monospace;
+  tab-size: 4;
+}
