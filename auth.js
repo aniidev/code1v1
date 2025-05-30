@@ -147,31 +147,26 @@ export async function signUpWithGoogle() {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    // Check if user document exists
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
 
-    // Create new user document if it doesn't exist
     if (!userDoc.exists()) {
-      await setDoc(userDocRef, {
-        username: user.displayName || "Anonymous",
-        email: user.email,
-        elo: 1000,
-        wins: 0
-      });
+      // Temporarily store user info and redirect to username page
+      sessionStorage.setItem("tempGoogleUser", JSON.stringify({
+        uid: user.uid,
+        email: user.email
+      }));
+      window.location.href = "setUsername.html";
+    } else {
+      // Existing user
+      const userData = {
+        uid: user.uid,
+        ...userDoc.data()
+      };
+      localStorage.setItem("userData", JSON.stringify(userData));
+      window.location.href = "index.html";
+      return userData;
     }
-
-    // Get created/updated user data
-    const updatedUserDoc = await getDoc(userDocRef);
-    const userData = {
-      uid: user.uid,
-      ...updatedUserDoc.data()
-    };
-
-    localStorage.setItem("userData", JSON.stringify(userData));
-    window.location.href = "index.html";
-    return userData;
-
   } catch (error) {
     console.error("Google sign-up error:", error);
     throw error;

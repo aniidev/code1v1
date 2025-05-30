@@ -1286,4 +1286,6 @@ a {
   white-space: pre-wrap;
   font-family: 'Courier New', monospace;
   tab-size: 4;
+  white-space: pre;
+  overflow-x: auto;
 }

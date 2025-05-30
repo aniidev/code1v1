@@ -1,0 +1,61 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pick a Username</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <input type="text" id="usernameInput" placeholder="Enter a username" />
+    <button onclick="submitUsername()" style="justify-content: flex-end;">Start Playing</button>
+    <p id="errorMsg" style="color: red; "></p>
+  </div>
+
+  <script type="module">
+    import { db } from "./firebase.js";
+    import { doc, setDoc, getDoc, collection, getDocs, query, where } from "https://esm.sh/firebase/firestore";
+
+    async function submitUsername() {
+      const username = document.getElementById("usernameInput").value.trim();
+      const errorMsg = document.getElementById("errorMsg");
+      const tempData = JSON.parse(sessionStorage.getItem("tempGoogleUser"));
+
+      if (!username || !tempData) {
+        errorMsg.textContent = "Missing username or user data.";
+        return;
+      }
+
+      // Check if username is taken
+      const q = query(collection(db, "users"), where("username", "==", username));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        errorMsg.textContent = "Username already taken.";
+        return;
+      }
+
+      // Create Firestore document
+      const userDocRef = doc(db, "users", tempData.uid);
+      await setDoc(userDocRef, {
+        username,
+        email: tempData.email,
+        elo: 1000,
+        wins: 0
+      });
+
+      // Get the saved document
+      const savedDoc = await getDoc(userDocRef);
+      const userData = {
+        uid: tempData.uid,
+        ...savedDoc.data()
+      };
+
+      localStorage.setItem("userData", JSON.stringify(userData));
+      sessionStorage.removeItem("tempGoogleUser");
+      window.location.href = "index.html";
+    }
+
+    window.submitUsername = submitUsername;
+  </script>
+</body>
+</html>

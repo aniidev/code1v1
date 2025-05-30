@@ -1,6 +1,6 @@
 import { login, loginWithGoogle } from "./auth.js";
 
-if(userData) window.location.href = "index.html";
+
 
 document.getElementById("google-signin").addEventListener("click", async () => {
   try {

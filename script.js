@@ -794,7 +794,7 @@ ${generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType
       stdin: "",
       args: [],
       compile_timeout: 10000,
-      run_timeout: 1000
+      run_timeout: 2000
     };
 
     const response = await fetch(pistonURL, {

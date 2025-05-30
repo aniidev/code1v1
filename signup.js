@@ -1,6 +1,6 @@
 import { register, signUpWithGoogle } from "./auth.js";
 
-if(userData) window.location.href = "index.html";
+
 document.querySelector("form").addEventListener("submit", async (event) => {
   event.preventDefault(); // This stops the form from submitting via POST
   
