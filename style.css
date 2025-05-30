@@ -1289,3 +1289,25 @@ a {
   white-space: pre;
   overflow-x: auto;
 }
+
+#opponentsCode.container
+{
+  padding: 3px;
+}
+
+ #mainContainer {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  #endScreen, #opponentsCode {
+    flex: 1;
+    min-width: 0;
+  }
+
+  #opponentsCode {
+    height: 400px;
+    width: 675px;
+    display: block; 
+  }

@@ -26,7 +26,6 @@
     </div>   
   </div>      
   
-
   <div class="main-flex">
   <div id="lobby" class="container">
     <div class="logo">Enter the Arena</div>
@@ -145,26 +144,35 @@
     </div>   
   </div>
   
+  <div id="mainContainer">
   <div id="endScreen" style="display: none">
     <canvas id="confetti-canvas"></canvas>
-  <div class="container end-container">
-    <div class="end-icon-wrapper">
-      <i id="endIcon" class="fa-solid fa-trophy"></i>
-    </div>
-    <div id="end-status" class="end-status-text">You Won!</div>
-    <div id="score" class="score-section">
-      <span class="score-label">ELO:</span>
-      <span id="elo-value" class="score-value">1000</span>
-      <div id="elo-change" class="elo-change" style="color: green;">+20</div>
-    </div>
+    <div class="container end-container">
+      <div class="end-icon-wrapper">
+        <i id="endIcon" class="fa-solid fa-trophy"></i>
+      </div>
+      <div id="end-status" class="end-status-text">You Won!</div>
+      <div id="score" class="score-section">
+        <span class="score-label">ELO:</span>
+        <span id="elo-value" class="score-value">1000</span>
+        <div id="elo-change" class="elo-change" style="color: green;">+20</div>
+      </div>
 
-    <button onclick="returnLobby()" class="button end-btn">Back to Lobby</button>
+      <button onclick="returnLobby()" class="button end-btn">Back to Lobby</button>
+    </div>
   </div>
-</div>
 
-<div id="opponentsCode" class="container" style="display: none;"><h3>Opponent's AC Code:</h3></div>
-
+  <div id="opponentsCode" style="display: none;" class="container">
+    <p>Opponent's Code:</p>
+  </div>
   
   <script src="script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+<script>
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
+require(['vs/editor/editor.main'], function () {
+  
+});
+</script>
 </body> 
 </html>

@@ -13,6 +13,7 @@ let userPassed = 0;
 let gameActive = false;
 const gameDuration = 15 * 60 * 1000 + 6000; // 15 minutes in ms + load time
 let startTime;
+let opponentsEditor; 
 
 if (userData) {
   document.getElementById("userHeader").textContent = `${userData.username}`;
@@ -188,14 +189,12 @@ async function submitCode(timerEnd) {
 socket.on('result', (msg, code) => {
   if(msg !== "Wrong Answer")
   {
-  gameActive = false;
-  
+  gameActive = false;  
   console.log('Received result:', msg);
   window.removeEventListener('beforeunload', confirmBeforeUnload);
   document.getElementById('vsScreen').style.display = 'none';
   document.getElementById('game').style.display = 'none';
   document.getElementById('endScreen').style.display = 'block';
-
 
   let iconClass = 'fa-trophy';
   let iconColor = '#1ffffff';
@@ -208,13 +207,10 @@ socket.on('result', (msg, code) => {
     iconClass = 'fa-trophy';
     iconColor = '#ffffff';
     statusColor = '#16f66b';
-
   } else if (msg === "Opponent AC - You lose" || msg.toLowerCase().includes("lose") || msg === "Forfeit") {
     if(msg === "Opponent AC - You lose")
     {
-      document.getElementById('opponentsCode').style.display = 'block';
-      document.getElementById('opponentsCode').innerHTML = 
-      `<pre class="code-block">${escapeHtml(code)}</pre>`;
+      showOpponentCode(cleanCode(code), 'java');
     }
     iconClass = 'fa-handshake';
     iconColor = '#ffffff';
@@ -794,7 +790,7 @@ ${generateTestHarness(lang, funcName, effectiveTestCases, inputTypes, returnType
       stdin: "",
       args: [],
       compile_timeout: 10000,
-      run_timeout: 2000
+      run_timeout: 4000
     };
 
     const response = await fetch(pistonURL, {
@@ -1163,4 +1159,59 @@ function escapeHtml(unsafe) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function showOpponentCode(code, language = 'java') {
+  document.getElementById('opponentsCode').style.display = 'block';
+
+  if (opponentsEditor) {
+    monaco.editor.setModelLanguage(opponentsEditor.getModel(), language);
+    opponentsEditor.setValue(code);
+  } else {
+    opponentsEditor = monaco.editor.create(document.getElementById('opponentsCode'), {
+      value: code,
+      language: language,
+      theme: 'vs-dark',
+      fontSize: 16,
+      readOnly: true,
+      automaticLayout: true,
+      minimap: { enabled: false },
+      lineNumbersMinChars: 2
+    });
+  }
+
+  // Update model options for indentation
+  opponentsEditor.getModel().updateOptions({ tabSize: 4, insertSpaces: true });
+
+  // Format document via editor instance action
+  opponentsEditor.getAction('editor.action.formatDocument')
+    .run()
+    .catch(() => {
+      // Ignore if formatting not supported for this language
+    });
+}
+
+
+function cleanCode(code) {
+  const lines = code.split('\n').map(line => line.trim());
+
+  let indentLevel = 0;
+  const indentSize = 4;
+  const result = [];
+
+  for (let line of lines) {
+    if (line === '') continue;
+
+    if (line === '}' || line.startsWith('}')) {
+      indentLevel = Math.max(indentLevel - 1, 0);
+    }
+
+    result.push(' '.repeat(indentLevel * indentSize) + line);
+
+    if (line.endsWith('{')) {
+      indentLevel++;
+    }
+  }
+
+  return result.join('\n');
 }
