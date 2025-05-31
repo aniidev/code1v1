@@ -19,7 +19,7 @@ const io = new Server(server);
 const rooms = {};
 const questions = require('./questions.json');
 let queue = [];
-
+let onlineCount = 0;
 
 
 app.use(express.static(__dirname));
@@ -38,6 +38,8 @@ io.on('connection', socket => {
       socket.username = userDoc.data().username;
     }
   });  
+  onlineCount++;
+  io.emit('onlineCount', onlineCount);
   console.log(`Client connected: ${socket.id}`);
 
   // PRIVATE ROOM LOGIC
@@ -300,7 +302,9 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
   socket.on('disconnect', async () => {
   const room = socket.room;
   console.log(`Client disconnected: ${socket.id}`);
-
+  onlineCount = Math.max(onlineCount - 1, 0);
+  io.emit('onlineCount', onlineCount);
+  
   // Remove from public match queue if in it
   queue = queue.filter(s => s.id !== socket.id);
 

@@ -1304,6 +1304,7 @@ a {
   #endScreen, #opponentsCode {
     flex: 1;
     min-width: 0;
+    min-height: 0;
   }
 
   #opponentsCode {
@@ -1373,4 +1374,29 @@ a {
   font-size: 2.2rem;
   margin-left: 0.5em;
   filter: drop-shadow(0 0 10px #16f66b);
+}
+
+#onlineUsers {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  background-color: #151515;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  padding: 8px 16px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  z-index: 9999;
+}
+
+.onlineDot {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background-color: #28c940;
+  margin-right: 8px;
+  border: 1.5px solid #1d7e2c;
 }

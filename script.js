@@ -1215,3 +1215,7 @@ function cleanCode(code) {
 
   return result.join('\n');
 }
+
+socket.on('onlineCount', count => {
+  document.getElementById('onlineCountLabel').textContent = `Online: ${count}`;
+});
