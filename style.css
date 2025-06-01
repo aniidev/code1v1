@@ -1325,7 +1325,7 @@ a {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeOutScale 1.25s ease-out forwards;
+  animation: fadeOutScale 1.35s ease-out forwards;
   pointer-events: none;
 }
 
@@ -1333,7 +1333,7 @@ a {
   text-align: center;
   color: #16f66b;
   transform: scale(1.2);
-  animation: textGlow 1.25s ease-in-out;
+  animation: textGlow 1.35s ease-in-out;
 }
 
 .speed-mode-content i {
@@ -1345,6 +1345,9 @@ a {
 @keyframes fadeOutScale {
   0% {
     opacity: 1;
+  }
+  50%{
+    opacity: 0.7;
   }
   100% {
     opacity: 0;

@@ -3,18 +3,31 @@ import { doc, setDoc, getDoc, collection, query, orderBy, getDocs, where } from 
 import { auth, db } from "./firebase.js";
 import { signOut } from "https://esm.sh/firebase/auth";
 import { GoogleAuthProvider, signInWithPopup } from "https://esm.sh/firebase/auth";
+
 export async function register(email, password, username) {
   try {
     // Create the user account
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const uid = userCredential.user.uid;
     
+    // Check if username is already taken (optional but ideal)
+    const usernameRef = doc(db, "usernames", username);
+    const usernameSnap = await getDoc(usernameRef);
+    if (usernameSnap.exists()) {
+      throw new Error("Username already taken");
+    }
+
     // Create user document in Firestore
     await setDoc(doc(db, "users", uid), {
       username,
       email,
       elo: 1000,
       wins: 0
+    });
+
+    // Create public username→uid mapping
+    await setDoc(doc(db, "usernames", username), {
+      uid
     });
     
     // Store user data in localStorage
@@ -44,17 +57,25 @@ export async function login(identifier, password) {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
 
     if (!isEmail) {
-      const q = query(collection(db, "users"), where("username", "==", identifier));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
+      // Securely fetch UID from usernames mapping
+      const usernameDoc = await getDoc(doc(db, "usernames", identifier));
+      if (!usernameDoc.exists()) {
         throw new Error("Username not found");
       }
 
-      const userData = querySnapshot.docs[0].data();
-      email = userData.email;
+      const { uid } = usernameDoc.data();
+
+      // Get the email from the user document
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (!userDoc.exists()) {
+        throw new Error("User data not found");
+      }
+
+      const userDataFromDoc = userDoc.data();
+      email = userDataFromDoc.email;
     }
 
+    // Sign in with the resolved email
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const uid = userCredential.user.uid;
 
@@ -68,7 +89,7 @@ export async function login(identifier, password) {
       localStorage.setItem("userData", JSON.stringify(userData));
       return userData;
     } else {
-      throw new Error("User data not found");
+      throw new Error("User data not found after login");
     }
   } catch (error) {
     console.error("Login error:", error);

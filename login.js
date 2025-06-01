@@ -22,3 +22,4 @@ document.getElementById("loginForm").addEventListener("submit", async (event) =>
     document.getElementById('status').innerHTML = "Login failed: " + e.message;
   }
 });
+

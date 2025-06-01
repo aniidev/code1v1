@@ -18,6 +18,7 @@ document.querySelector("form").addEventListener("submit", async (event) => {
   }
   
   try {
+    document.getElementById('status').style.color = '#16f66b';
     document.getElementById('status').innerHTML = "Creating your account...";
     
     const userData = await register(email, password, username);
