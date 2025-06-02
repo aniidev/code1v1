@@ -5,6 +5,7 @@ import { onAuthStateChanged } from "https://esm.sh/firebase/auth";
 let currentPage = 1;
 const usersPerPage = 10;
 let globalUsers = [];
+let currentUserUid = null;  // Tracks signed-in user (if any)
 
 
 async function fetchLeaderboard() {
@@ -15,14 +16,12 @@ async function fetchLeaderboard() {
   return users;
 }
 
-
 function getWinRate(user) {
   if (user.totalMatches && user.wins) {
     return user.wins / user.totalMatches;
   }
   return 0;
 }
-
 
 function renderLeaderboard(users, currentUid, page = 1) {
   const tbody = document.querySelector('.leaderboard-table tbody');
@@ -37,7 +36,7 @@ function renderLeaderboard(users, currentUid, page = 1) {
     const initials = user.username
       ? user.username.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : "??";
-    const isCurrentUser = user.uid === currentUid;
+    const isCurrentUser = currentUid && user.uid === currentUid;
     const winRate = Math.round(getWinRate(user) * 100);
     const tr = document.createElement('tr');
     if (isCurrentUser) tr.classList.add("your-rank-highlight");
@@ -67,10 +66,16 @@ function renderLeaderboard(users, currentUid, page = 1) {
   updatePagination(users.length);
 }
 
-
 function updateYourStats(users, currentUid) {
   const yourRankElem = document.getElementById('your-rank');
   const yourEloElem = document.getElementById('your-elo');
+
+  if (!currentUid) {
+    yourRankElem.textContent = "--";
+    yourEloElem.textContent = "--";
+    return;
+  }
+
   const idx = users.findIndex(u => u.uid === currentUid);
   if (idx !== -1) {
     const user = users[idx];
@@ -89,7 +94,6 @@ function calculateTopPercent(rank, totalUsers) {
   return `Top ${(rank / totalUsers * 100).toFixed(2)}%`;
 }
 
-
 async function loadAndRenderLeaderboard(sortBy = "elo") {
   const users = await fetchLeaderboard();
 
@@ -105,24 +109,9 @@ async function loadAndRenderLeaderboard(sortBy = "elo") {
 
   globalUsers = users;
   currentPage = 1;
-  const currentUser = auth.currentUser;
-  renderLeaderboard(globalUsers, currentUser?.uid, currentPage);
-  updateYourStats(globalUsers, currentUser?.uid);
+  renderLeaderboard(globalUsers, currentUserUid, currentPage);
+  updateYourStats(globalUsers, currentUserUid);
 }
-
-
-// Wait for auth, then initial load + set up filter listener
-onAuthStateChanged(auth, user => {
-  if (!user) return;
-
-  const categoryFilter = document.getElementById('categoryFilter');
-  categoryFilter.addEventListener('change', () => {
-    loadAndRenderLeaderboard(categoryFilter.value);
-  });
-
-  // Initial load with default sort by elo
-  loadAndRenderLeaderboard(categoryFilter.value);
-});
 
 function updatePagination(totalUsers) {
   const pagination = document.querySelector('.pagination');
@@ -139,7 +128,7 @@ function updatePagination(totalUsers) {
     button.addEventListener('click', () => {
       if (page >= 1 && page <= totalPages && page !== currentPage) {
         currentPage = page;
-        renderLeaderboard(globalUsers, auth.currentUser?.uid, currentPage);
+        renderLeaderboard(globalUsers, currentUserUid, currentPage);
       }
     });
     return button;
@@ -154,4 +143,18 @@ function updatePagination(totalUsers) {
   pagination.appendChild(createButton('>', currentPage + 1));
 }
 
+// Always show leaderboard, whether signed in or not
+onAuthStateChanged(auth, user => {
+  currentUserUid = user?.uid ?? null;
 
+  const categoryFilter = document.getElementById('categoryFilter');
+  if (categoryFilter) {
+    categoryFilter.addEventListener('change', () => {
+      loadAndRenderLeaderboard(categoryFilter.value);
+    });
+
+    loadAndRenderLeaderboard(categoryFilter.value);
+  } else {
+    loadAndRenderLeaderboard(); // fallback if no filter
+  }
+});
