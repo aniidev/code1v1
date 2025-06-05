@@ -62,6 +62,7 @@ socket.on('joinRoom', async (incoming) => {
   if (!rooms[room]) {
     rooms[room] = [];
     rooms[room].gameOver = false;
+    rooms[room].status = 'countdown'; 
   }
   rooms[room].push(socket.id);
 
@@ -139,6 +140,7 @@ socket.on('publicMatch', async () => {
     const roomCode = Math.random().toString(36).substring(2, 5).toUpperCase();
     rooms[roomCode] = [player1.id, player2.id];
     rooms[roomCode].gameOver = false;
+    rooms[roomCode].status = 'countdown';
 
     player1.join(roomCode);
     player2.join(roomCode);
@@ -299,12 +301,12 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
 
 
   // DISCONNECT CLEANUP
-  socket.on('disconnect', async () => {
+socket.on('disconnect', async () => {
   const room = socket.room;
   console.log(`Client disconnected: ${socket.id}`);
   onlineCount = Math.max(onlineCount - 1, 0);
   io.emit('onlineCount', onlineCount);
-  
+
   // Remove from public match queue if in it
   queue = queue.filter(s => s.id !== socket.id);
 
@@ -325,7 +327,7 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
         const opponentData = opponentDoc.data();
 
         const [newWinnerElo, newLoserElo] = updateElo(opponentData.elo, myData.elo);
-          
+
         await opponentDocRef.update({
           elo: newWinnerElo,
           wins: (opponentData.wins || 0) + 1,
@@ -337,9 +339,14 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
           wins: myData.wins || 0,
           totalMatches: (myData.totalMatches || 0) + 1
         });
-        
 
-        opponentSocket.emit('result', 'Opponent disconnected - You win!');
+        // CUSTOM MESSAGE BASED ON STATUS
+        if (rooms[room].status === 'countdown') {
+          opponentSocket.emit('result', 'Opponent disconnected - You win!');
+        } else {
+          opponentSocket.emit('result', 'Opponent disconnected - You win!');
+        }
+
         opponentSocket.emit('eloUpdate', {
           elo: newWinnerElo,
           change: newWinnerElo - opponentData.elo
@@ -349,16 +356,16 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
           change: -(newWinnerElo - opponentData.elo)
         });
         await db.collection('matches').doc(room).update({
-  status: 'ended',
-  endTime: admin.firestore.Timestamp.now(),
-  results: [
-  { userId: socket.userId, username: socket.username, elo: newLoserElo, result: 'lose' },
-  { userId: opponentSocket.userId, username: opponentSocket.username, elo: newWinnerElo, result: 'win' }
-]
-});
+          status: 'ended',
+          endTime: admin.firestore.Timestamp.now(),
+          results: [
+            { userId: socket.userId, username: socket.username, elo: newLoserElo, result: 'lose' },
+            { userId: opponentSocket.userId, username: opponentSocket.username, elo: newWinnerElo, result: 'win' }
+          ]
+        });
       }
-      
-      socket.disconnect(true); 
+
+      socket.disconnect(true);
     }
 
     delete rooms[room];
@@ -367,6 +374,7 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
     }
   }
 });
+
 socket.on("forfeit", async () => {
   const room = socket.room;
   console.log(`Client forfeited: ${socket.id}`);
@@ -460,6 +468,14 @@ socket.on('testCaseUpdate', ({ passed, total }) => {
     });
   }
 });
+
+socket.on('gameStarted', () => {
+  const room = socket.room;
+  if (room && rooms[room]) {
+    rooms[room].status = 'in-game';
+  }
+});
+
 });
 
 

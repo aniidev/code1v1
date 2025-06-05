@@ -1,4 +1,6 @@
-const socket = io();
+const socket = io({
+  closeOnBeforeUnload: false
+});
 let room = '';
 let vsInterval = null;
 let editor = null;
@@ -113,9 +115,8 @@ function joinRoom() {
       room: room,
       type: 'join'
     });
-        document.getElementById('lobby').style.display = 'none';
-        document.getElementById('matches').style.display = 'none';
-
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('matches').style.display = 'none';
   } else {
     window.location.href = 'login.html';
   }
@@ -142,6 +143,7 @@ socket.on('startGame', ({question, startTime}) => {
     timeLeft--;
     document.getElementById('vsTimer').innerText = `0:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
     if (timeLeft <= 0) {
+      socket.emit('gameStarted');
       clearInterval(vsInterval);
       document.getElementById('vsScreen').style.display = 'none';
       document.getElementById('game').style.display = 'block';
@@ -210,7 +212,19 @@ socket.on('result', (msg, code) => {
   } else if (msg === "Opponent AC - You lose" || msg.toLowerCase().includes("lose") || msg === "Forfeit") {
     if(msg === "Opponent AC - You lose")
     {
-      showOpponentCode(cleanCode(code), 'java');
+      const trimmed = code.trim();
+      let lang = "";
+      if (trimmed.startsWith("def ")) {
+        lang = "Python";
+      } else if (trimmed.startsWith("public static")) {
+        lang = "Java";
+      } else if (trimmed.startsWith("function")) {
+        lang = "Javascript";
+      } else {
+        lang = "C++";
+      }
+      showOpponentCode(cleanCode(code), lang);
+      document.getElementById('oppsCode').innerHTML = `Opponent's Code: ${lang}`;
     }
     iconClass = 'fa-handshake';
     iconColor = '#ffffff';
@@ -232,9 +246,9 @@ socket.on('connect_error', (err) => {
 
 
 socket.on('invalidRoom', (msg) => {
+  returnLobby();
   console.log("invalid room");
   alert(msg);
-
 });
 
 socket.on('eloUpdate', ({ elo, change }) => {
