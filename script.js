@@ -126,6 +126,8 @@ function joinRoom() {
 socket.on('startGame', ({question, startTime}) => {
   gameActive = true;
   currentQuestion = question;
+  document.getElementById('rematchBtn').innerHTML = 'Rematch';
+  document.getElementById('endScreen').style.display = 'none';
   document.getElementById('waitingScreen').style.display = 'none';
   document.getElementById('publicWaiting').style.display = 'none';
   document.getElementById('header').style.display = 'none';
@@ -1232,4 +1234,17 @@ function cleanCode(code) {
 
 socket.on('onlineCount', count => {
   document.getElementById('onlineCountLabel').textContent = `Online: ${count}`;
+});
+
+function reqRematch() {
+  socket.emit('requestRematch');
+  document.getElementById('rematchBtn').innerHTML = 'Rematch Requested';
+}
+
+socket.on('opponentRequestedRematch', () => {
+  document.getElementById('rematchBtn').innerHTML = 'Opponent wants a Rematch';
+});
+
+socket.on('rematchUnavailable', (message) => {
+  document.getElementById('rematchBtn').innerHTML = `${message}`;
 });

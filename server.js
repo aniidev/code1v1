@@ -21,13 +21,26 @@ const questions = require('./questions.json');
 let queue = [];
 let onlineCount = 0;
 
-
 app.use(express.static(__dirname));
 
 function getRandomQuestion() {
   const idx = Math.floor(Math.random() * questions.length);
   return questions[idx];
 }
+
+// Clean up rooms that have been inactive for too long
+function cleanupInactiveRooms() {
+  const now = Date.now();
+  Object.keys(rooms).forEach(roomCode => {
+    const room = rooms[roomCode];
+    if (room.gameOver && room.endTime && (now - room.endTime) > 300000) { // 5 minutes
+      delete rooms[roomCode];
+    }
+  });
+}
+
+// Run cleanup every 5 minutes
+setInterval(cleanupInactiveRooms, 300000);
 
 io.on('connection', socket => {
   socket.on('registerUser', async ({ userId }) => {
@@ -48,7 +61,7 @@ socket.on('joinRoom', async (incoming) => {
   const joinType = incoming.type;
   socket.room = room;
 
-  if (rooms[room] && rooms[room].length >= 2) {
+  if (rooms[room] && rooms[room].length >= 2 && !rooms[room].gameOver) {
     socket.emit('invalidRoom', 'Room is full or unavailable.');
     return;
   }
@@ -64,6 +77,14 @@ socket.on('joinRoom', async (incoming) => {
     rooms[room].gameOver = false;
     rooms[room].status = 'countdown'; 
   }
+  
+  // If room exists but game is over, reset it for new players
+  if (rooms[room].gameOver) {
+    rooms[room] = [];
+    rooms[room].gameOver = false;
+    rooms[room].status = 'countdown';
+  }
+  
   rooms[room].push(socket.id);
 
   if (rooms[room].length === 2) {
@@ -195,7 +216,6 @@ socket.on('publicMatch', async () => {
   }
 });
 
-
   // CODE SUBMISSION
 socket.on('submitCode', async ({ code, won, timerEnd }) => {
   const room = socket.room;
@@ -230,12 +250,16 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
 
     socket.emit('result', "Time's up - You lose");
     socket.emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - myElo});
-    results: [
-    { userId: socket.userId, username: socket.username, elo: newWinnerElo, result: 'lose' },
-    { userId: opponentSocket.userId, username: opponentSocket.username, elo: newLoserElo, result: 'lose' }
-    ]
+    
     rooms[room].gameOver = true;
-    await db.collection('matches').doc(room).update({ status: 'ended' });
+    rooms[room].endTime = Date.now(); // Add end time for cleanup
+    await db.collection('matches').doc(room).update({ 
+      status: 'ended',
+      results: [
+        { userId: socket.userId, username: socket.username, elo: newLoserElo, result: 'lose' },
+        { userId: opponentSocket.userId, username: opponentSocket.username, elo: newWinnerElo, result: 'win' }
+      ]
+    });
     return;
   }
   else if (won && myUserId && opponentUserId) {
@@ -284,7 +308,8 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
     io.to(opponentSocketId).emit('result', 'Opponent AC - You lose', formattedCode);
     io.to(opponentSocketId).emit('eloUpdate', { elo: newLoserElo, change: newLoserElo - opponentElo });
   }
-  rooms[room].gameOver = true; 
+  rooms[room].gameOver = true;
+  rooms[room].endTime = Date.now(); // Add end time for cleanup
   await db.collection('matches').doc(room).update({
   status: 'ended',
   endTime: admin.firestore.Timestamp.now(),
@@ -298,7 +323,6 @@ socket.on('submitCode', async ({ code, won, timerEnd }) => {
   socket.emit('result', 'Wrong Answer');
 }
 });
-
 
   // DISCONNECT CLEANUP
 socket.on('disconnect', async () => {
@@ -351,10 +375,7 @@ socket.on('disconnect', async () => {
           elo: newWinnerElo,
           change: newWinnerElo - opponentData.elo
         });
-        socket.emit('eloUpdate', {
-          elo: newLoserElo,
-          change: -(newWinnerElo - opponentData.elo)
-        });
+        
         await db.collection('matches').doc(room).update({
           status: 'ended',
           endTime: admin.firestore.Timestamp.now(),
@@ -364,13 +385,31 @@ socket.on('disconnect', async () => {
           ]
         });
       }
-
-      socket.disconnect(true);
     }
 
-    delete rooms[room];
+    // Mark game as over but don't delete room immediately
+    rooms[room].gameOver = true;
+    rooms[room].endTime = Date.now();
+    
+    // Remove disconnected player from room array
+    const playerIndex = rooms[room].indexOf(socket.id);
+    if (playerIndex > -1) {
+      rooms[room].splice(playerIndex, 1);
+    }
+    
     if (opponentId) {
       io.to(opponentId).emit('opponentLeft');
+    }
+  } else if (room && rooms[room] && rooms[room].gameOver) {
+    // If game is already over, just remove player from room
+    const playerIndex = rooms[room].indexOf(socket.id);
+    if (playerIndex > -1) {
+      rooms[room].splice(playerIndex, 1);
+    }
+    
+    // If room is empty after removing player, mark for cleanup
+    if (rooms[room].length === 0) {
+      rooms[room].endTime = Date.now();
     }
   }
 });
@@ -387,6 +426,7 @@ socket.on("forfeit", async () => {
     const opponentSocket = io.sockets.sockets.get(opponentId);
 
     if (opponentSocket && socket.userId && opponentSocket.userId && !rooms[room].gameOver) {
+      // ... existing ELO update code ...
       const myDocRef = db.collection("users").doc(socket.userId);
       const opponentDocRef = db.collection("users").doc(opponentSocket.userId);
 
@@ -401,21 +441,18 @@ socket.on("forfeit", async () => {
         const opponentEloChange = newWinnerElo - opponentData.elo;
         const myEloChange = newLoserElo - myData.elo;
 
-        // Update opponent (winner)
         await opponentDocRef.update({
           elo: newWinnerElo,
           wins: (opponentData.wins || 0) + 1,
           totalMatches: (opponentData.totalMatches || 0) + 1
         });
 
-        // Update forfeiting player (loser)
         await myDocRef.update({
           elo: newLoserElo,
           wins: myData.wins || 0,
           totalMatches: (myData.totalMatches || 0) + 1
         });
 
-        // Notify both players
         opponentSocket.emit('result', 'Opponent Forfeit');
         opponentSocket.emit('eloUpdate', {
           elo: newWinnerElo,
@@ -427,28 +464,32 @@ socket.on("forfeit", async () => {
           elo: newLoserElo,
           change: myEloChange
         });
+        
         await db.collection('matches').doc(room).update({
-  status: 'ended',
-  endTime: admin.firestore.Timestamp.now(),
- results: [
-  { userId: socket.userId, username: socket.username, elo: newLoserElo, result: 'lose' },
-  { userId: opponentSocket.userId, username: opponentSocket.username, elo: newWinnerElo, result: 'win' }
-]
-
-});
+          status: 'ended',
+          endTime: admin.firestore.Timestamp.now(),
+          results: [
+            { userId: socket.userId, username: socket.username, elo: newLoserElo, result: 'lose' },
+            { userId: opponentSocket.userId, username: opponentSocket.username, elo: newWinnerElo, result: 'win' }
+          ]
+        });
       }
-      
     }
     
+    // Mark game as over
+    rooms[room].gameOver = true;
+    rooms[room].endTime = Date.now();
     
-    // Room cleanup
-    delete rooms[room];
+    // IMPORTANT: DON'T remove from room array - let both players stay in room for potential rematch
+    // Remove this line: rooms[room].splice(playerIndex, 1);
+    
     if (opponentId) {
       io.to(opponentId).emit('opponentLeft');
     }
   }
 
-  socket.disconnect(true); // Force disconnect
+  // DON'T force disconnect - let the socket stay connected for potential rematch
+  // socket.disconnect(true); // Remove this line completely
 });
 
 socket.on('testCaseUpdate', ({ passed, total }) => {
@@ -476,9 +517,120 @@ socket.on('gameStarted', () => {
   }
 });
 
+socket.on('requestRematch', async () => {
+  console.log(`Received rematch request from ${socket.id}`);
+  const room = socket.room;
+  if (!room || !rooms[room]) {
+    console.log('No room found for rematch request');
+    return;
+  }
+
+  // Track rematch requests
+  if (!rooms[room].rematchRequests) rooms[room].rematchRequests = {};
+  rooms[room].rematchRequests[socket.id] = true;
+
+  // FIXED: Check all connected sockets in the room, not just the room array
+  let opponentSocket = null;
+  let opponentId = null;
+  
+  // Get all sockets in this room
+  const socketsInRoom = io.sockets.adapter.rooms.get(room);
+  
+  if (socketsInRoom) {
+    // Find opponent among connected sockets in the room
+    for (const socketId of socketsInRoom) {
+      if (socketId !== socket.id) {
+        const candidateSocket = io.sockets.sockets.get(socketId);
+        if (candidateSocket && candidateSocket.connected) {
+          opponentSocket = candidateSocket;
+          opponentId = socketId;
+          break;
+        }
+      }
+    }
+  }
+  
+  if (!opponentSocket) {
+    console.log('No connected opponent found in room');
+    socket.emit('rematchUnavailable', 'Opponent Left');
+    return;
+  }
+
+  // opponentSocket already found above
+
+  // Notify opponent about rematch request
+  opponentSocket.emit('opponentRequestedRematch');
+  console.log(`Notified opponent ${opponentId} about rematch request`);
+
+  // If both have requested, start a new game
+  const rematchRequests = Object.keys(rooms[room].rematchRequests);
+  console.log(`Current rematch requests: ${rematchRequests.length}`);
+  
+  if (rematchRequests.length === 2) {
+    console.log('Both players requested rematch, starting new game');
+    
+    // Reset room for new game
+    rooms[room].gameOver = false;
+    rooms[room].status = 'countdown';
+    rooms[room].rematchRequests = {};
+    delete rooms[room].endTime;
+
+    // Ensure both players are in the room array
+    rooms[room] = [socket.id, opponentId];
+
+    const socket1 = socket;
+    const socket2 = opponentSocket;
+
+    // Get fresh player info
+    const getUserInfo = async (sock) => {
+      if (sock.userId) {
+        const docSnap = await db.collection("users").doc(sock.userId).get();
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          return {
+            username: data.username || "Player",
+            elo: data.elo || 1000
+          };
+        }
+      }
+      return { username: "Player", elo: 1000 };
+    };
+
+    const player1Info = await getUserInfo(socket1);
+    const player2Info = await getUserInfo(socket2);
+
+    // Send updated player info
+    socket1.emit('playerInfo', {
+      self: player1Info.username,
+      opponent: player2Info.username,
+      selfElo: player1Info.elo,
+      opponentElo: player2Info.elo
+    });
+
+    socket2.emit('playerInfo', {
+      self: player2Info.username,
+      opponent: player1Info.username,
+      selfElo: player2Info.elo,
+      opponentElo: player1Info.elo
+    });
+
+    const question = getRandomQuestion();
+    const startTime = admin.firestore.Timestamp.now();
+
+    // Create new match document
+    await db.collection('matches').doc(room).set({
+      startTime: startTime,
+      players: [socket1.userId || 'anon1', socket2.userId || 'anon2'],
+      type: 'rematch',
+      status: 'ongoing'
+    });
+
+    // Start the new game
+    io.to(room).emit('startGame', { question, startTime: startTime.toDate().getTime() });
+    console.log('New rematch game started');
+  }
 });
-
-
+});
 
 server.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
